@@ -1,5 +1,5 @@
-# Outputs are regenerable from config + seed (vault/decisions/0003); never committed.
-results/
+# Experiment outputs under results/ ARE committed (user decision, Aug 2026): the JRESS
+# experiment tables and their provenance cards live in the repo. Scratch outputs stay out.
 outputs/
 *.egg-info/
 

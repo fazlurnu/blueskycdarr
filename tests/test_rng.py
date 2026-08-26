@@ -1,4 +1,4 @@
-"""Locks for the RNG stream tree (``blueskycdarr/rng.py``, ADR 0004).
+"""Locks for the RNG stream tree (``cdarr/rng.py``, ADR 0004).
 
 The load-bearing property: ``child`` addresses the same tree ``spawn`` enumerates, so a
 parallel worker can rebuild exactly its slice of the episode fan-out — and the
@@ -11,7 +11,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blueskycdarr.rng import child, generator, root_seed_sequence, spawn
+from cdarr.rng import child, generator, root_seed_sequence, spawn
 
 
 def _draw(seq: np.random.SeedSequence) -> int:

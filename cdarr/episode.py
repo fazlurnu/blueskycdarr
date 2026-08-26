@@ -26,18 +26,18 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from blueskycdarr.adsl import BroadcastChannel, ContactTable, noisy_snapshot
-from blueskycdarr.aircraft import AircraftSpec, as_pair
-from blueskycdarr.config import Config
-from blueskycdarr.detection import detect, pairs_all_clear
-from blueskycdarr.engine import PairwiseWorld
-from blueskycdarr.geo import track_components
-from blueskycdarr.noise import DEFAULT_NOISE, NoiseShape
-from blueskycdarr.recovery import DEFAULT_RECOVERY, Recovery, recovered_mask, worldview_sigmas
-from blueskycdarr.resolution import DEFAULT_RESOLVER, Resolver, resolve
-from blueskycdarr.rng import child, generator
-from blueskycdarr.scenario import PairwiseEncounter
-from blueskycdarr.state import StateArrays, counterpart
+from cdarr.adsl import BroadcastChannel, ContactTable, noisy_snapshot
+from cdarr.aircraft import AircraftSpec, as_pair
+from cdarr.config import Config
+from cdarr.detection import detect, pairs_all_clear
+from cdarr.engine import PairwiseWorld
+from cdarr.geo import track_components
+from cdarr.noise import DEFAULT_NOISE, LatencyBiased, NoiseShape
+from cdarr.recovery import DEFAULT_RECOVERY, Recovery, recovered_mask, worldview_sigmas
+from cdarr.resolution import DEFAULT_RESOLVER, Resolver, resolve
+from cdarr.rng import child, generator
+from cdarr.scenario import PairwiseEncounter
+from cdarr.state import StateArrays, counterpart
 
 _EPS = 1e-9
 
@@ -118,6 +118,9 @@ def run_episode(
         # Worldview uncertainty for the probabilistic criteria (declared CI95s when
         # set — the exp5 calibration mismatch — else the actual ones, ADR 0007).
         rel_pos_sigma, rel_vel_sigma = worldview_sigmas(config.uncertainty)
+        # The latency bias models a broadcast delay, so it never touches an aircraft's
+        # own measurement (CDaRR's intruder-only rule): own-nav uses the base shape.
+        own_noise = noise.base if isinstance(noise, LatencyBiased) else noise
 
         min_sep = np.full(n_pairs, np.inf)
         next_cdr = 0.0
@@ -138,7 +141,7 @@ def run_episode(
             channel.deliver_due(t, contacts)
 
             if t + _EPS >= next_cdr:
-                own_view = noisy_snapshot(truth, all_idx, config.uncertainty, rng_nav, noise)
+                own_view = noisy_snapshot(truth, all_idx, config.uncertainty, rng_nav, own_noise)
                 other_view, seen = contacts.view_of_counterparts()
                 conflicts = detect(
                     own_view, other_view, seen, rpz, config.conflict.t_lookahead

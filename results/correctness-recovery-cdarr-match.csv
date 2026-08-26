@@ -1,0 +1,4 @@
+recovery,p_los_run,n_los,n_encounters,median_min_sep,cdarr_exp1_p_los
+pastcpa,0,0,300,104.0255304,0.0004
+ftr,0.04,12,300,54.83914734,0.0211
+probabilistic_ftr,0,0,300,68.40451656,0.0005

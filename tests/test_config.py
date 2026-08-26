@@ -1,4 +1,4 @@
-"""Locks for the config schema (``blueskycdarr/config.py``, ADR 0003).
+"""Locks for the config schema (``cdarr/config.py``, ADR 0003).
 
 What matters: a config built in Python is checked exactly like one parsed from a file,
 unknown keys fail with the legal list in the message, and ``to_mapping`` round-trips —
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from blueskycdarr.config import (
+from cdarr.config import (
     CommConfig,
     Config,
     ConflictConfig,

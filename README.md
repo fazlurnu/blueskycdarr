@@ -26,7 +26,7 @@ Relations, in one line each:
   mirrors its experiment UI and vault conventions, and deliberately *keeps* the BlueSky
   runtime its ADR 0003 removed — two independent engines, one study.
 - **MixedVarLSENew** (`~/Projects/MixedVarLSENew`) — the consumer;
-  `blueskycdarr.blackbox.make_blackbox` implements its oracle contract.
+  `cdarr.blackbox.make_blackbox` implements its oracle contract.
 
 ## Install
 
@@ -54,8 +54,8 @@ which writes `results/mixedvarlse.csv` (one row per condition: swept levels,
 provenance card. The same study in Python:
 
 ```python
-from blueskycdarr import Fixed, Sweep, MC, Models, Config, run_experiment
-from blueskycdarr import MULTIROTOR, PairwiseEncounter
+from cdarr import Fixed, Sweep, MC, Models, Config, run_experiment
+from cdarr import MULTIROTOR, PairwiseEncounter
 
 res = run_experiment(
     {"aircraft": Sweep(["multirotor", "fixedwing"]),
@@ -75,13 +75,31 @@ res.cell(aircraft="multirotor", pos_ci95=3.0, vel_ci95=1.0)   # the raw estimate
 As the MixedVarLSENew oracle:
 
 ```python
-from blueskycdarr.blackbox import make_blackbox
+from cdarr.blackbox import make_blackbox
 blackbox = make_blackbox(n_encounters=300, seed=7, n_jobs=-1)
 # run_lse(space, blackbox, threshold=np.log10(0.02), store="...jsonl")
 ```
 
 The run-file format is [`configs/README.md`](configs/README.md);
 [`configs/mixedvarlse.yaml`](configs/mixedvarlse.yaml) is the fully-annotated reference.
+
+## The JRESS experiments
+
+The probabilistic-recovery paper's three experiments (its §5, Tables 1–3) live in
+[`scripts/`](scripts/), one script each, sharing the paper's environment through
+[`jress_common.py`](scripts/jress_common.py):
+
+```bash
+python scripts/exp1_crossing_angle.py   # recovery methods vs crossing angle (Table 1)
+python scripts/exp2_gamma.py            # the confidence threshold gamma (Table 2)
+python scripts/exp3_noise_models.py     # six navigation-noise models (Table 3)
+```
+
+Each defaults to a small **dummy** budget (sparse angles, 2 runs/condition) and takes
+`--production` for the paper's full budget (100–1000 runs/condition — run those on the
+server). Tables land in [`results/exp{1,2,3}/`](results/) with provenance cards, and
+`results/` is committed: every table in the repo is traceable to a config, a seed, and
+a code state.
 
 ## Test
 

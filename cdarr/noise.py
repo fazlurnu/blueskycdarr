@@ -43,7 +43,12 @@ class Gaussian:
     """Zero-mean isotropic 2D normal error."""
 
     def draw(
-        self, n: int, ci95: float, rng: np.random.Generator, trk_rad: np.ndarray
+        self,
+        n: int,
+        ci95: float,
+        rng: np.random.Generator,
+        trk_rad: np.ndarray,
+        gs: np.ndarray,
     ) -> np.ndarray:
         # (2, n) then transpose: byte-identical to the pre-shape draw order, so a
         # seeded run with the default shape reproduces exactly (ADR 0004 invariant).
@@ -65,7 +70,12 @@ class MixtureGaussian:
             raise ValueError(f"tail_ratio must be > 1, got {self.tail_ratio}")
 
     def draw(
-        self, n: int, ci95: float, rng: np.random.Generator, trk_rad: np.ndarray
+        self,
+        n: int,
+        ci95: float,
+        rng: np.random.Generator,
+        trk_rad: np.ndarray,
+        gs: np.ndarray,
     ) -> np.ndarray:
         s1 = _mixture_sigma1(round(float(ci95), 8), self.tail_ratio, self.tail_weight)
         use_tail = rng.random(n) < self.tail_weight
@@ -84,7 +94,12 @@ class AnisotropicGaussian:
             raise ValueError(f"var_ratio must be > 1, got {self.var_ratio}")
 
     def draw(
-        self, n: int, ci95: float, rng: np.random.Generator, trk_rad: np.ndarray
+        self,
+        n: int,
+        ci95: float,
+        rng: np.random.Generator,
+        trk_rad: np.ndarray,
+        gs: np.ndarray,
     ) -> np.ndarray:
         std_ratio = math.sqrt(self.var_ratio)
         sigma_cross = _aniso_sigma_cross(round(float(ci95), 8), std_ratio)
@@ -110,7 +125,12 @@ class AnisotropicMixtureGaussian:
             raise ValueError(f"tail_ratio must be > 1, got {self.tail_ratio}")
 
     def draw(
-        self, n: int, ci95: float, rng: np.random.Generator, trk_rad: np.ndarray
+        self,
+        n: int,
+        ci95: float,
+        rng: np.random.Generator,
+        trk_rad: np.ndarray,
+        gs: np.ndarray,
     ) -> np.ndarray:
         std_ratio = math.sqrt(self.var_ratio)
         s1 = _aniso_mixture_sigma_cross(
@@ -123,7 +143,52 @@ class AnisotropicMixtureGaussian:
         return _rotate_to_enu(along, cross, trk_rad)
 
 
-NoiseShape = Gaussian | MixtureGaussian | AnisotropicGaussian | AnisotropicMixtureGaussian
+@dataclass(frozen=True)
+class LatencyBiased:
+    """A base shape plus CDaRR's deterministic along-track latency bias.
+
+    The reported position lags the truth by ``delay_s * gs`` along the track — the
+    broadcast-delay model of the exp3 sweep (``NoiseModel.add_latency_bias``; Schaefer &
+    Jonas 2025 measured ~66 ms for ADS-B v2, CDaRR stress-tested 100 ms). The bias is
+    deterministic on top of the base shape's random error, so the *random* part keeps the
+    base's radial-CI95 containment, exactly as in the source. Applied only to what a
+    counterpart *receives*: the episode strips the bias from the own-navigation
+    measurement (CDaRR's intruder-only rule — an aircraft's own state has no broadcast
+    delay).
+    """
+
+    base: Gaussian | MixtureGaussian | AnisotropicGaussian | AnisotropicMixtureGaussian = (
+        Gaussian()
+    )
+    delay_s: float = 0.1
+
+    def __post_init__(self) -> None:
+        if self.delay_s < 0:
+            raise ValueError(f"delay_s must be >= 0, got {self.delay_s}")
+
+    def draw(
+        self,
+        n: int,
+        ci95: float,
+        rng: np.random.Generator,
+        trk_rad: np.ndarray,
+        gs: np.ndarray,
+    ) -> np.ndarray:
+        xy = self.base.draw(n, ci95, rng, trk_rad, gs)
+        trk = np.asarray(trk_rad, dtype=float)
+        bias_along = -self.delay_s * np.asarray(gs, dtype=float)
+        xy[:, 0] += bias_along * np.sin(trk)
+        xy[:, 1] += bias_along * np.cos(trk)
+        return xy
+
+
+NoiseShape = (
+    Gaussian
+    | MixtureGaussian
+    | AnisotropicGaussian
+    | AnisotropicMixtureGaussian
+    | LatencyBiased
+)
 
 DEFAULT_NOISE: NoiseShape = Gaussian()
 
@@ -132,6 +197,7 @@ _LABELS: dict[str, type] = {
     "mixture_gaussian": MixtureGaussian,
     "anisotropic_gaussian": AnisotropicGaussian,
     "anisotropic_mixture_gaussian": AnisotropicMixtureGaussian,
+    "latency_biased": LatencyBiased,
 }
 
 
@@ -150,6 +216,8 @@ def noise_from_spec(spec: object, *, source: object = "<spec>") -> NoiseShape:
         )
     if name not in _LABELS:
         raise ValueError(f"{source}: unknown noise shape {name!r}. Known: {sorted(_LABELS)}")
+    if name == "latency_biased" and "base" in params:
+        params["base"] = noise_from_spec(params["base"], source=source)
     try:
         return _LABELS[name](**params)
     except TypeError as err:

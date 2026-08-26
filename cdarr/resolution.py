@@ -32,9 +32,9 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from blueskycdarr.detection import Conflicts
-from blueskycdarr.geo import track_from_components
-from blueskycdarr.state import StateArrays
+from cdarr.detection import Conflicts
+from cdarr.geo import track_from_components
+from cdarr.state import StateArrays
 
 _MIN_DCPA_M = 0.001  # CDaRR's threshold for the exactly-head-on degenerate case
 _ANG_EPS = 1e-9  # rad: within this of the cone edge counts as outside (OpenCDaRR's)

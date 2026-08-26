@@ -10,7 +10,7 @@ with its standard error in decades: a Jeffreys-corrected proportion and the delt
 exactly the notebook's Monte-Carlo oracle, so swapping the OpenCDaRR backend for this one
 is a one-import change:
 
-    from blueskycdarr.blackbox import make_blackbox
+    from cdarr.blackbox import make_blackbox
     blackbox = make_blackbox(n_encounters=300, seed=7, n_jobs=-1)
     run_lse(space, blackbox, threshold=np.log10(0.02), ...)
 
@@ -25,13 +25,13 @@ from typing import Any
 
 import numpy as np
 
-from blueskycdarr.aircraft import aircraft_by_label
-from blueskycdarr.config import Config
-from blueskycdarr.experiment import MC, Fixed, Models, run_experiment
-from blueskycdarr.noise import DEFAULT_NOISE, NoiseShape
-from blueskycdarr.recovery import DEFAULT_RECOVERY, Recovery
-from blueskycdarr.resolution import DEFAULT_RESOLVER, Resolver
-from blueskycdarr.scenario import PairwiseEncounter
+from cdarr.aircraft import aircraft_by_label
+from cdarr.config import Config
+from cdarr.experiment import MC, Fixed, Models, run_experiment
+from cdarr.noise import DEFAULT_NOISE, NoiseShape
+from cdarr.recovery import DEFAULT_RECOVERY, Recovery
+from cdarr.resolution import DEFAULT_RESOLVER, Resolver
+from cdarr.scenario import PairwiseEncounter
 
 Point = Mapping[str, Any]
 

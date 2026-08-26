@@ -1,4 +1,4 @@
-"""Engine-backed locks: the episode loop end to end (``blueskycdarr/episode.py``).
+"""Engine-backed locks: the episode loop end to end (``cdarr/episode.py``).
 
 These are the expensive tests — small batches, short horizons — that pin the behaviours
 everything else rests on: a clean resolve under perfect CNS, the ballistic null result
@@ -13,12 +13,12 @@ import pytest
 
 pytest.importorskip("bluesky")
 
-from blueskycdarr.aircraft import MULTIROTOR  # noqa: E402
-from blueskycdarr.config import CommConfig, Config, UncertaintyConfig  # noqa: E402
-from blueskycdarr.episode import run_episode  # noqa: E402
-from blueskycdarr.experiment import MC, Fixed, Models, run_experiment  # noqa: E402
-from blueskycdarr.rng import child, root_seed_sequence  # noqa: E402
-from blueskycdarr.scenario import PairwiseEncounter  # noqa: E402
+from cdarr.aircraft import MULTIROTOR  # noqa: E402
+from cdarr.config import CommConfig, Config, UncertaintyConfig  # noqa: E402
+from cdarr.episode import run_episode  # noqa: E402
+from cdarr.experiment import MC, Fixed, Models, run_experiment  # noqa: E402
+from cdarr.rng import child, root_seed_sequence  # noqa: E402
+from cdarr.scenario import PairwiseEncounter  # noqa: E402
 
 _SCENARIO = PairwiseEncounter(pairs=(1, 2), tlos=45.0)
 _SEQ = child(root_seed_sequence(0), 0)
@@ -58,7 +58,7 @@ def test_commanded_ground_speed_is_the_ground_speed_flown() -> None:
     ground-frame command as CAS and flies 0.48% fast at 100 m — and a loop that re-feeds
     measured ground speed compounds that factor per command (the CDaRR speed creep,
     demonstrated in notebooks/bluesky_speed_command.ipynb)."""
-    from blueskycdarr.engine import PairwiseWorld
+    from cdarr.engine import PairwiseWorld
 
     scenario = PairwiseEncounter(pairs=(1, 1), speed=10.0, tlos=45.0)
     geometry = scenario.draw_geometry(np.random.default_rng(0))

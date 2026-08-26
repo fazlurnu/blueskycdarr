@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from blueskycdarr.episode import EpisodeResult
+from cdarr.episode import EpisodeResult
 
 
 @dataclass(frozen=True)

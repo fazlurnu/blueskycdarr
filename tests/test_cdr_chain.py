@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import numpy as np
 
-from blueskycdarr.detection import detect, pairs_all_clear
-from blueskycdarr.geo import track_components
-from blueskycdarr.recovery import past_cpa_recovered
-from blueskycdarr.resolution import resolve_mvp
-from blueskycdarr.state import StateArrays
+from cdarr.detection import detect, pairs_all_clear
+from cdarr.geo import track_components
+from cdarr.recovery import past_cpa_recovered
+from cdarr.resolution import resolve_mvp
+from cdarr.state import StateArrays
 
 _LAT = 52.0
 _M_PER_DEG_LAT = 111_320.0

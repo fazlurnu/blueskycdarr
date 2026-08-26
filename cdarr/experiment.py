@@ -4,7 +4,7 @@ An experiment is a mapping of parameter names to axes: :class:`Fixed` pins a val
 every condition, :class:`Sweep` enumerates levels, and the conditions are the cross
 product in declaration order. The vocabulary is closed — an unknown name fails
 immediately with the declarable list — and every name routes into the run: uncertainty,
-communication, conflict and timing fields into :class:`~blueskycdarr.config.Config`
+communication, conflict and timing fields into :class:`~cdarr.config.Config`
 sections, geometry slots into the scenario, ``aircraft`` into the models bundle.
 
     res = run_experiment(
@@ -34,15 +34,15 @@ from typing import Any
 
 import numpy as np
 
-from blueskycdarr.aircraft import AircraftSpec, aircraft_from_spec
-from blueskycdarr.config import Config, config_from_mapping, load_mapping
-from blueskycdarr.episode import run_episode
-from blueskycdarr.metrics import MonteCarloEstimate, combine
-from blueskycdarr.noise import DEFAULT_NOISE, NoiseShape, noise_from_spec
-from blueskycdarr.recovery import PastCPA, ProbabilisticFTR, Recovery, recovery_from_spec
-from blueskycdarr.resolution import DEFAULT_RESOLVER, Resolver, resolver_from_spec
-from blueskycdarr.rng import child, root_seed_sequence
-from blueskycdarr.scenario import PairwiseEncounter
+from cdarr.aircraft import AircraftSpec, aircraft_from_spec
+from cdarr.config import Config, config_from_mapping, load_mapping
+from cdarr.episode import run_episode
+from cdarr.metrics import MonteCarloEstimate, combine
+from cdarr.noise import DEFAULT_NOISE, NoiseShape, noise_from_spec
+from cdarr.recovery import PastCPA, ProbabilisticFTR, Recovery, recovery_from_spec
+from cdarr.resolution import DEFAULT_RESOLVER, Resolver, resolver_from_spec
+from cdarr.rng import child, root_seed_sequence
+from cdarr.scenario import PairwiseEncounter
 
 # --- declaration -----------------------------------------------------------------------
 
@@ -320,7 +320,7 @@ def run_experiment(
         axes=axes,
     )
     if card_dir is not None:
-        from blueskycdarr.card import write_card
+        from cdarr.card import write_card
 
         path = write_card(result, config, models, Path(card_dir))
         result = replace(result, card_path=path)

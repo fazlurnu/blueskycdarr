@@ -18,7 +18,7 @@ directly, so the channel is the part of the model under test.
 
 ## Decision
 
-An event-based channel (`blueskycdarr/adsl.py`) with three decoupled clocks — engine
+An event-based channel (`cdarr/adsl.py`) with three decoupled clocks — engine
 `dt`, CDR `cdr_dt`, and per-aircraft broadcast schedules:
 
 - **Schedule.** Aircraft `i` transmits at gaps `interval + U(-jitter, +jitter)` (optional

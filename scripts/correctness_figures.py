@@ -19,7 +19,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from blueskycdarr import (
+from cdarr import (
     MC,
     MULTIROTOR,
     CommConfig,
@@ -31,11 +31,11 @@ from blueskycdarr import (
     UncertaintyConfig,
     run_experiment,
 )
-from blueskycdarr.adsl import BroadcastChannel, ContactTable, noisy_snapshot
-from blueskycdarr.episode import run_episode
-from blueskycdarr.geo import enu_offset
-from blueskycdarr.rng import child, generator, root_seed_sequence, spawn
-from blueskycdarr.state import StateArrays
+from cdarr.adsl import BroadcastChannel, ContactTable, noisy_snapshot
+from cdarr.episode import run_episode
+from cdarr.geo import enu_offset
+from cdarr.rng import child, generator, root_seed_sequence, spawn
+from cdarr.state import StateArrays
 
 ROOT = Path(__file__).resolve().parent.parent
 IMG = ROOT / "vault" / "img"
@@ -295,7 +295,7 @@ def fig_p_los_response(n_jobs: int) -> None:
 
 def fig_recovery_comparison(n_jobs: int) -> None:
     """The three recovery models against uncertainty, the gamma knob, and CDaRR itself."""
-    from blueskycdarr import FTR, PastCPA, ProbabilisticFTR, SimulationConfig
+    from cdarr import FTR, PastCPA, ProbabilisticFTR, SimulationConfig
 
     stressed = Config(
         uncertainty=UncertaintyConfig(vel_ci95=3.0),

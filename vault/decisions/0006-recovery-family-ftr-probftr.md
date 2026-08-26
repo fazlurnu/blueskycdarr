@@ -25,7 +25,7 @@ cross-line tail; their Appendix B validates it against Monte Carlo).
 ## Decision
 
 - **Components.** `PastCPA(bouncing_guard=True)`, `FTR()`,
-  `ProbabilisticFTR(gamma=0.999, k_theta=256)` in `blueskycdarr/recovery.py`; a
+  `ProbabilisticFTR(gamma=0.999, k_theta=256)` in `cdarr/recovery.py`; a
   `recovery` slot on `Models`, a top-level `recovery:` run-file key (bare name or
   `{type: ..., params}` — the OpenCDaRR component rule), a declarable/sweepable
   `recovery` axis (labels, typed mappings, or instances; `gamma` sweeps via

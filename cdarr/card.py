@@ -14,8 +14,8 @@ from typing import TYPE_CHECKING
 import yaml
 
 if TYPE_CHECKING:
-    from blueskycdarr.config import Config
-    from blueskycdarr.experiment import ExperimentResult, Models
+    from cdarr.config import Config
+    from cdarr.experiment import ExperimentResult, Models
 
 
 def write_card(
@@ -72,7 +72,7 @@ def write_card(
 
 
 def _aircraft_line(models: Models) -> str:
-    from blueskycdarr.aircraft import as_pair
+    from cdarr.aircraft import as_pair
 
     own, intr = as_pair(models.aircraft)
     if own is intr:

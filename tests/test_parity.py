@@ -13,27 +13,28 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blueskycdarr.aircraft import FIXEDWING, MULTIROTOR, aircraft_from_spec, as_pair
-from blueskycdarr.config import Config, UncertaintyConfig
-from blueskycdarr.detection import detect
-from blueskycdarr.experiment import (
+from cdarr.aircraft import FIXEDWING, MULTIROTOR, aircraft_from_spec, as_pair
+from cdarr.config import Config, UncertaintyConfig
+from cdarr.detection import detect
+from cdarr.experiment import (
     Condition,
     Models,
     _apply,
     _validate_declared_accuracy_is_read,
 )
-from blueskycdarr.noise import (
+from cdarr.noise import (
     AnisotropicGaussian,
     AnisotropicMixtureGaussian,
     Gaussian,
+    LatencyBiased,
     MixtureGaussian,
     noise_from_spec,
 )
-from blueskycdarr.recovery import FTR, ProbabilisticFTR, worldview_sigmas
-from blueskycdarr.resolution import MVP, VO, resolve_vo, resolver_from_spec
-from blueskycdarr.rng import generator, root_seed_sequence
-from blueskycdarr.scenario import PairwiseEncounter
-from blueskycdarr.state import StateArrays
+from cdarr.recovery import FTR, ProbabilisticFTR, worldview_sigmas
+from cdarr.resolution import MVP, VO, resolve_vo, resolver_from_spec
+from cdarr.rng import generator, root_seed_sequence
+from cdarr.scenario import PairwiseEncounter
+from cdarr.state import StateArrays
 
 _LAT = 52.0
 _M_PER_DEG_LAT = 111_320.0
@@ -64,7 +65,7 @@ def test_every_noise_shape_delivers_the_configured_radial_ci95(shape) -> None:
     """The containment guarantee CDaRR's bisections solve for, checked empirically."""
     rng = generator(root_seed_sequence(3))
     trk = rng.uniform(0.0, 2 * np.pi, 60_000)
-    xy = shape.draw(60_000, 10.0, rng, trk)
+    xy = shape.draw(60_000, 10.0, rng, trk, np.full(60_000, 10.3))
     radial95 = np.percentile(np.hypot(xy[:, 0], xy[:, 1]), 95)
     assert abs(radial95 - 10.0) < 0.15
 
@@ -74,12 +75,14 @@ def test_the_mixture_has_the_heavier_tail_and_the_anisotropy_has_the_declared_ra
     n = 120_000
     trk = np.zeros(n)  # track north: along-track = north component
 
-    plain = Gaussian().draw(n, 10.0, rng, trk)
-    mixed = MixtureGaussian(tail_ratio=3.0, tail_weight=0.1).draw(n, 10.0, rng, trk)
+    plain = Gaussian().draw(n, 10.0, rng, trk, np.full(n, 10.3))
+    mixed = MixtureGaussian(tail_ratio=3.0, tail_weight=0.1).draw(
+        n, 10.0, rng, trk, np.full(n, 10.3)
+    )
     tail = lambda xy: np.mean(np.hypot(xy[:, 0], xy[:, 1]) > 15.0)  # noqa: E731
     assert tail(mixed) > 2.0 * tail(plain)  # same CI95, far heavier beyond it
 
-    aniso = AnisotropicGaussian(var_ratio=9.0).draw(n, 10.0, rng, trk)
+    aniso = AnisotropicGaussian(var_ratio=9.0).draw(n, 10.0, rng, trk, np.full(n, 10.3))
     ratio = np.var(aniso[:, 1]) / np.var(aniso[:, 0])  # north (along) / east (cross)
     assert 8.0 < ratio < 10.0
 
@@ -90,9 +93,25 @@ def test_gaussian_shape_reproduces_the_pre_shape_draw_stream() -> None:
     a = generator(root_seed_sequence(5))
     b = generator(root_seed_sequence(5))
     old_east, old_north = a.normal(0.0, std, (2, 7))
-    xy = Gaussian().draw(7, 10.0, b, np.zeros(7))
+    xy = Gaussian().draw(7, 10.0, b, np.zeros(7), np.full(7, 10.3))
     np.testing.assert_array_equal(xy[:, 0], old_east)
     np.testing.assert_array_equal(xy[:, 1], old_north)
+
+
+def test_latency_bias_lags_the_track_by_delay_times_speed() -> None:
+    """The exp3 latency model: a deterministic along-track lag of delay_s * gs on top
+    of the base shape's error, which keeps its own radial containment."""
+    rng = generator(root_seed_sequence(9))
+    n, gs = 60_000, np.full(60_000, 10.2889)
+    trk = np.zeros(n)  # north: along-track = north component
+    xy = LatencyBiased(Gaussian(), delay_s=0.1).draw(n, 10.0, rng, trk, gs)
+    assert np.mean(xy[:, 1]) == pytest.approx(-0.1 * 10.2889, abs=0.05)  # lags behind
+    assert abs(np.mean(xy[:, 0])) < 0.05  # no cross-track bias
+    spec = noise_from_spec(
+        {"type": "latency_biased", "delay_s": 0.1,
+         "base": {"type": "anisotropic_gaussian", "var_ratio": 9.0}}
+    )
+    assert spec == LatencyBiased(AnisotropicGaussian(var_ratio=9.0), delay_s=0.1)
 
 
 def test_noise_spec_parses_and_rejects() -> None:
@@ -241,8 +260,8 @@ def test_apply_routes_the_new_components_and_fields() -> None:
 
 def test_vo_and_a_mixed_pair_fly_resolve_and_reproduce() -> None:
     pytest.importorskip("bluesky")
-    from blueskycdarr.episode import run_episode
-    from blueskycdarr.rng import child
+    from cdarr.episode import run_episode
+    from cdarr.rng import child
 
     scenario = PairwiseEncounter(pairs=(1, 2), tlos=45.0, speed=(13.0, 16.0))
     seq = child(root_seed_sequence(0), 0)

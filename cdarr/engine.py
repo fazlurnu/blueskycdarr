@@ -35,11 +35,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from blueskycdarr.aircraft import AircraftModel, AircraftSpec, as_pair
-from blueskycdarr.config import ConflictConfig, SimulationConfig
-from blueskycdarr.geo import distance_m
-from blueskycdarr.scenario import PairGeometry, PairwiseEncounter
-from blueskycdarr.state import StateArrays
+from cdarr.aircraft import AircraftModel, AircraftSpec, as_pair
+from cdarr.config import ConflictConfig, SimulationConfig
+from cdarr.geo import distance_m
+from cdarr.scenario import PairGeometry, PairwiseEncounter
+from cdarr.state import StateArrays
 
 M_TO_NM = 1.0 / 1852.0
 MPS_TO_KTS = 1.0 / 0.514444

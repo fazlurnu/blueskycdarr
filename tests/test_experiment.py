@@ -1,4 +1,4 @@
-"""Locks for the declaration layer (``blueskycdarr/experiment.py``, ADR 0003).
+"""Locks for the declaration layer (``cdarr/experiment.py``, ADR 0003).
 
 Everything here runs without the engine: expansion order, the closed vocabulary, value
 routing into config/models, run-file parsing, and the result tabulations over hand-built
@@ -12,9 +12,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from blueskycdarr.aircraft import FIXEDWING, MULTIROTOR
-from blueskycdarr.config import Config
-from blueskycdarr.experiment import (
+from cdarr.aircraft import FIXEDWING, MULTIROTOR
+from cdarr.config import Config
+from cdarr.experiment import (
     MC,
     Condition,
     ExperimentResult,
@@ -26,9 +26,9 @@ from blueskycdarr.experiment import (
     load_run,
     sweep_from_file,
 )
-from blueskycdarr.metrics import MonteCarloEstimate
-from blueskycdarr.recovery import FTR, ProbabilisticFTR
-from blueskycdarr.scenario import PairwiseEncounter
+from cdarr.metrics import MonteCarloEstimate
+from cdarr.recovery import FTR, ProbabilisticFTR
+from cdarr.scenario import PairwiseEncounter
 
 _RUN_FILE = """
 seed: 7
