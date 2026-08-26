@@ -23,12 +23,11 @@ import argparse
 from pathlib import Path
 
 from cdarr import (
-    MC,
+    MULTIROTOR,
     Config,
     ConflictConfig,
     ExperimentResult,
     Models,
-    MULTIROTOR,
     PairwiseEncounter,
     PastCPA,
     ProbabilisticFTR,
