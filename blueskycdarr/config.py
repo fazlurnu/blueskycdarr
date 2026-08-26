@@ -7,8 +7,9 @@ The conventions are OpenCDaRR's (their ADR 0023, mirrored here by ADR 0003):
   ``dataclasses.replace`` (the sweep's per-condition substitution) re-validates for free.
 - **Closed schema.** Unknown keys fail immediately, at every level, with the legal list in
   the message.
-- **Plain numbers live in flat blocks**; the two component slots (``aircraft``,
-  ``scenario``) are parsed by :func:`blueskycdarr.experiment.load_run`, never stored here.
+- **Plain numbers live in flat blocks**; the component slots (``aircraft``,
+  ``scenario``, ``recovery``, ``resolver``, ``noise``) are parsed by
+  :func:`blueskycdarr.experiment.load_run`, never stored here.
 """
 
 from __future__ import annotations
