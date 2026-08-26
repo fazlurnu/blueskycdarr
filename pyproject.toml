@@ -1,0 +1,48 @@
+# BlueSkyCDaRR — CDaRR's BlueSky-based stochastic pairwise conflict simulation,
+# rebuilt small and clean, with an OpenCDaRR-style declarative experiment layer.
+#
+# Runtime deps are kept minimal on purpose (OpenCDaRR design-philosophy #10, #12):
+# numpy for the math, pyyaml for run files, joblib for the episode fan-out, and the
+# BlueSky fork that IS the simulation engine (ADR 0001 — the whole point of this
+# package is to answer with BlueSky's dynamics, so unlike OpenCDaRR it is a runtime
+# dependency, pinned to the branch CDaRR's results were produced with).
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "blueskycdarr"
+version = "0.0.0"
+description = "CDaRR pairwise conflict simulation on BlueSky, with a declarative experiment layer"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "numpy>=1.26,<2.4",   # <2.4 is the fork's own ceiling
+    "pyyaml>=6",
+    "joblib>=1.2",
+    # Pinned to a commit, not the branch: the branch can move and results must not
+    # (ADR 0001). This SHA is branch CDaRR as of 2026-08-26.
+    "bluesky-simulator @ git+https://github.com/fazlurnu/bluesky.git@800f47d4af92a3f17adae943a4f9ebf09307c5ca",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+figures = ["matplotlib>=3.7", "pandas>=2"]
+
+[tool.setuptools.packages.find]
+include = ["blueskycdarr*"]
+
+[tool.ruff]
+line-length = 99
+target-version = "py310"
+
+[tool.ruff.lint]
+# E/F pyflakes+pycodestyle, I import-sort, UP pyupgrade, B bugbear, N naming —
+# the OpenCDaRR selection; "name it like the paper" still wants consistent Python
+# naming for the plumbing around the domain terms.
+select = ["E", "F", "I", "UP", "B", "N"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

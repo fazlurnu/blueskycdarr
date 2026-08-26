@@ -1,0 +1,15 @@
+# Outputs are regenerable from config + seed (vault/decisions/0003); never committed.
+results/
+outputs/
+*.egg-info/
+
+# Environments and caches
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+
+# BlueSky writes runtime artefacts next to the process
+output/
+cache/

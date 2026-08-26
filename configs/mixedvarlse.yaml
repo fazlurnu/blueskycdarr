@@ -1,0 +1,69 @@
+# The MixedVarLSENew study — every declarable field written out, defaults included, so
+# this file doubles as the format reference (the OpenCDaRR house rule; see README.md
+# beside this file and vault/decisions/0003).
+#
+# The fixed half pins the encounter MixedVarLSENew holds constant (dpsi 90, dcpa 0,
+# cruise 15 m/s, RPZ 50 m); the sweep block is the full factorial over exactly the five
+# design variables the level-set study varies.
+seed: 7                    # reproducibility root: file + seed -> result
+
+scenario:
+  type: pairwise           # the encounter model; the rest are its own fields
+  speed: 15.0              # m/s — ownship cruise (inside both airframe envelopes)
+  gs_intr: null            # m/s — intruder speed; null matches the ownship's
+  dpsi: 90.0               # deg — crossing angle; null draws U(0, 360) per pair
+  dcpa: 0.0                # m — miss distance at CPA; null draws U(0, dcpa_max)
+  dcpa_max: 50.0           # m — upper bound of the dcpa draw; keep within rpz
+  tlos: 90.0               # s — time to loss of separation at spawn (inside the horizon:
+                           #     the pair spawns straight into a detectable conflict)
+  pairs: [10, 10]          # spawn grid; rows x cols = 100 encounters per episode
+
+aircraft: multirotor       # catalog entry (multirotor = M600, fixedwing = small UAV);
+                           # swept below, so this is only the single-run default
+
+recovery: pastcpa          # resume-navigation model (ADR 0006): pastcpa, ftr, or a
+                           # typed mapping — {type: probabilistic_ftr, gamma: 0.999} —
+                           # also sweepable (labels or typed mappings in the sweep block)
+
+resolver: mvp              # resolution algorithm (ADR 0007): mvp or vo; the margin
+                           # both read lives under conflict: below
+
+noise: gaussian            # position-error shape (ADR 0007): gaussian, mixture_gaussian,
+                           # anisotropic_gaussian, anisotropic_mixture_gaussian — every
+                           # shape delivers the pos_ci95 radial containment exactly
+
+uncertainty:               # how well an aircraft is measured — 95% radial CIs
+  pos_ci95: 10.0           # m   (swept below)
+  vel_ci95: 1.0            # m/s (swept below)
+
+comm:                      # the broadcast channel (ADR 0002)
+  reception_prob: 1.0      # per-transmission Bernoulli (swept below)
+  max_range_m: 3000.0      # hard surveillance range; null disables the gate (swept below)
+  latency_s: 0.1           # s — transmit-to-usable delay; the received state is the
+                           #     transmit-time state, so every contact ages by at least this
+  broadcast_interval_s: 1.0  # s — ADS-L cadence
+  broadcast_jitter_s: 0.1  # s — per-transmission slot dither U(-j, +j)
+  broadcast_random_phase: false  # true: first transmission drawn in U(0, interval)
+
+conflict:
+  rpz: 50.0                # m — protected zone; loss of separation = closer than this
+  t_lookahead: 120.0       # s — detection horizon
+  resolution_margin: 1.05  # MVP resolution-zone buffer (CDaRR's asas_marh)
+
+simulation:
+  dt: 0.2                  # s — BlueSky integration step (CDaRR's effective step)
+  cdr_dt: 1.0              # s — detect/resolve/recover cadence; commands hold between
+  t_max: 300.0             # s — hard cap; an unsettled episode is reported, not hidden
+  done_timeout: 10.0       # s — sustained all-clear before the episode ends
+
+estimate:
+  type: mc                 # plain Monte Carlo (the only backend; ADR 0003)
+  n_encounters: 300        # per condition — MixedVarLSENew's per-point budget; a floor,
+                           # rounded up to whole episodes
+
+sweep:                     # full factorial: 2 x 4 x 2 x 3 x 3 = 144 conditions
+  aircraft: [multirotor, fixedwing]
+  pos_ci95: [3.0, 10.0, 30.0, 92.6]      # m   — ADS-L accuracy classes
+  vel_ci95: [1.0, 3.0]                   # m/s
+  reception_prob: [0.5, 0.8, 1.0]
+  max_range_m: [500.0, 1000.0, 3000.0]   # m
