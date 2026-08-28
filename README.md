@@ -104,19 +104,23 @@ a code state.
 ## Test
 
 ```bash
-pytest          # 52 tests: pure CDR chain, channel physics, recovery criteria
-                # (incl. an analytic-vs-Monte-Carlo check), engine-backed episodes
+pytest          # 81 tests: pure CDR chain, channel physics, recovery criteria
+                # (incl. an analytic-vs-Monte-Carlo check), engine-backed episodes,
+                # world-snapshot parity, and the IPS estimator locks
 ruff check .    # lint, line length 99
 ```
 
 ## Documentation
 
+- [`docs/`](docs/) — **start here to understand the code**: the guided reading order,
+  the architecture and its diagrams, the anatomy of the episode loop, and the
+  rare-event (IPS) estimator with level-design guidance.
 - [`vault/correctness.md`](vault/correctness.md) — **the evidence**: every modelled
   effect validated against its own definition, with figures, including the recovery
   family cross-validated against CDaRR's own exp1 results.
-- [`vault/decisions/`](vault/decisions/) — the six ADRs behind the design (engine
+- [`vault/decisions/`](vault/decisions/) — the eight ADRs behind the design (engine
   choice, channel model, experiment layer, metric and seeding, aircraft catalog,
-  recovery family).
+  recovery family, CDaRR-parity batch, fixed-level IPS).
 - [`notebooks/`](notebooks/) — executed notebooks:
   [`experiment_example.ipynb`](notebooks/experiment_example.ipynb) walks the study
   axes (dpsi, pos/vel uncertainty, reception, surveillance range, aircraft type) one
