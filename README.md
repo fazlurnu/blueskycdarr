@@ -122,6 +122,10 @@ ruff check .    # lint, line length 99
   choice, channel model, experiment layer, metric and seeding, aircraft catalog,
   recovery family, CDaRR-parity batch, fixed-level IPS).
 - [`notebooks/`](notebooks/) — executed notebooks:
+  [`ips_walkthrough.ipynb`](notebooks/ips_walkthrough.ipynb) runs one rare-event
+  splitting replication under the microscope — 50 particles, the culls, the
+  resampling fan, the lineages that reach loss of separation — and proves it
+  reproduces the packaged estimator bit for bit;
   [`experiment_example.ipynb`](notebooks/experiment_example.ipynb) walks the study
   axes (dpsi, pos/vel uncertainty, reception, surveillance range, aircraft type) one
   experiment at a time;
