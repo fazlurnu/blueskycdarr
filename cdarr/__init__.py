@@ -10,6 +10,8 @@ The short path, by role:
   :class:`~cdarr.experiment.Models`, :class:`~cdarr.experiment.MC`, the
   aircraft catalog (:data:`~cdarr.aircraft.MULTIROTOR`,
   :data:`~cdarr.aircraft.FIXEDWING`).
+- **Estimate a rare P(LoS)** — :func:`~cdarr.ips.estimate_rare_prob`, fixed-level
+  splitting for the probabilities plain MC starves on (ADR 0008).
 - **Feed MixedVarLSENew** — :func:`~cdarr.blackbox.make_blackbox`.
 
 Usage::
@@ -48,6 +50,7 @@ from cdarr.experiment import (
     run_one_experiment,
     sweep_from_file,
 )
+from cdarr.ips import IPSEstimate, estimate_rare_prob
 from cdarr.metrics import MonteCarloEstimate
 from cdarr.noise import (
     AnisotropicGaussian,
@@ -79,6 +82,7 @@ __all__ = [
     "ExperimentResult",
     "Fixed",
     "Gaussian",
+    "IPSEstimate",
     "LatencyBiased",
     "MixtureGaussian",
     "Models",
@@ -89,6 +93,7 @@ __all__ = [
     "SimulationConfig",
     "Sweep",
     "UncertaintyConfig",
+    "estimate_rare_prob",
     "load_run",
     "make_blackbox",
     "run_experiment",
