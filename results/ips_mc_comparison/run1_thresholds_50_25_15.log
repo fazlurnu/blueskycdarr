@@ -1,0 +1,31 @@
+rare-event MC vs IPS — 2026-08-28 05:09:10
+cell: pos_ci95=25 vel_ci95=3 rx=0.8 lat=0.3 | dcpa=0 tlos=20 | rpz=50
+
+MC chunk  1/10: cumulative <50m: 81/10000  <25m: 41/10000  <15m: 26/10000   (17s elapsed)
+MC chunk  2/10: cumulative <50m: 166/20000  <25m: 77/20000  <15m: 47/20000   (29s elapsed)
+MC chunk  3/10: cumulative <50m: 255/30000  <25m: 121/30000  <15m: 69/30000   (41s elapsed)
+MC chunk  4/10: cumulative <50m: 335/40000  <25m: 155/40000  <15m: 85/40000   (55s elapsed)
+MC chunk  5/10: cumulative <50m: 423/50000  <25m: 198/50000  <15m: 112/50000   (68s elapsed)
+MC chunk  6/10: cumulative <50m: 522/60000  <25m: 235/60000  <15m: 129/60000   (82s elapsed)
+MC chunk  7/10: cumulative <50m: 602/70000  <25m: 275/70000  <15m: 152/70000   (96s elapsed)
+MC chunk  8/10: cumulative <50m: 713/80000  <25m: 322/80000  <15m: 179/80000   (109s elapsed)
+MC chunk  9/10: cumulative <50m: 819/90000  <25m: 372/90000  <15m: 212/90000   (121s elapsed)
+MC chunk 10/10: cumulative <50m: 912/100000  <25m: 414/100000  <15m: 245/100000   (133s elapsed)
+MC arm done: 100000 encounters in 133s (753 encounters/s)
+
+IPSEstimate  P(LoS) 0.00347 over 6 replications
+  survival   levels (95, 82, 71, 62, 55, 50, 44, 38, 32, 28, 25, 21, 18, 15) m | mean per level 0.46, 0.36, 0.2, 0.33, 0.89, 0.9, 0.91, 0.87, 0.82, 0.89, 0.91, 0.89, 0.84, 0.81
+  collapsed  1 of 6 replications
+  lineages   721 distinct survivors behind the final clouds (per-replication record: reps)
+IPS arm done in 61s (1536 spawned encounters + restored legs)
+
+============================================================================
+ threshold          MC (100k)          IPS  ratio IPS/MC
+      50 m      0.00912 (912)      0.00901          0.99
+      25 m      0.00414 (414)      0.00516          1.25
+      15 m      0.00245 (245)      0.00347          1.42
+
+wall: MC 133s (8 workers) | IPS 61s (6 workers) | total 194s
+IPS collapsed replications: 1/6
+
+[exited with code 0]

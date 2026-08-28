@@ -1,0 +1,34 @@
+rare-event 1e-4 deep run — 2026-08-28 05:12:40
+MC chunk  1/10: cumulative <15m: 27/10000  <10m: 16/10000  <5m: 8/10000   (15s)
+MC chunk  2/10: cumulative <15m: 42/20000  <10m: 24/20000  <5m: 12/20000   (27s)
+MC chunk  3/10: cumulative <15m: 66/30000  <10m: 39/30000  <5m: 18/30000   (38s)
+MC chunk  4/10: cumulative <15m: 98/40000  <10m: 65/40000  <5m: 31/40000   (50s)
+MC chunk  5/10: cumulative <15m: 109/50000  <10m: 69/50000  <5m: 32/50000   (63s)
+MC chunk  6/10: cumulative <15m: 141/60000  <10m: 91/60000  <5m: 43/60000   (79s)
+MC chunk  7/10: cumulative <15m: 162/70000  <10m: 105/70000  <5m: 47/70000   (97s)
+MC chunk  8/10: cumulative <15m: 181/80000  <10m: 114/80000  <5m: 51/80000   (115s)
+MC chunk  9/10: cumulative <15m: 202/90000  <10m: 129/90000  <5m: 59/90000   (142s)
+MC chunk 10/10: cumulative <15m: 224/100000  <10m: 145/100000  <5m: 66/100000   (175s)
+MC arm done: 100000 encounters in 175s (571 encounters/s); min_sep saved to min_sep_100k.npy
+smallest 12 min_sep [m]: [0.09, 0.09, 0.33, 0.38, 0.51, 0.56, 0.58, 0.59, 0.61, 0.65, 0.77, 0.79]
+
+rare boundary d* = 0.6 m (8/100000 below it)
+deep shells from order statistics: [7.6, 3.3, 1.3, 0.6]
+IPSEstimate  P(LoS) 9.43e-05 over 6 replications
+  survival   levels (95, 82, 71, 62, 55, 50, 44, 38, 32, 28, 25, 21, 18, 15, 7.6, 3.3, 1.3, 0.6) m | mean per level 0.49, 0.38, 0.23, 0.45, 0.75, 0.85, 0.79, 0.69, 0.86, 0.88, 0.92, 0.88, 0.86, 0.85, 0.59, 0.43, 0.31, 0.36
+  collapsed  1 of 6 replications
+  lineages   410 distinct survivors behind the final clouds (per-replication record: reps)
+IPS arm done in 109s (1536 spawned encounters + restored legs)
+
+==============================================================================
+ threshold            MC (100k)          IPS  ratio IPS/MC
+    50.0 m        0.00923 (923)        0.012          1.30
+    25.0 m        0.00407 (407)      0.00561          1.38
+    15.0 m        0.00224 (224)        0.004          1.78
+     0.6 m            8e-05 (8)     9.43e-05          1.18
+
+wall: MC 175s (8 workers) | IPS 109s (6 workers) | total 284s
+IPS collapsed replications: 1/6
+finished 2026-08-28 05:17:24
+
+[exited with code 0]
