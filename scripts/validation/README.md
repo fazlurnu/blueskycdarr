@@ -11,6 +11,15 @@ shells (~0.45 conditional survival each — the recipe validated at the 1e-4 bou
 intermediate rung, so the classic P(LoS) ratio is reported for free from the same
 ladders.
 
+**The flown encounter and its CDR chain**: both drones at 15 m/s, aimed
+dead-centre (dcpa 0), spawned *outside* the detection horizon — tlos 150 s against a
+120 s lookahead, so the pair approaches ballistically until the predicted CPA enters
+the horizon at t ≈ 30 s (the JRESS-style regime; t_max 300 s). Detection is
+state-based CPA, resolution is MVP (margin 1.05 → 52.5 m), recovery is
+**Probabilistic FTR** (γ = 0.999): a resolving aircraft resumes navigation only when
+P(DCPA > rpz) > γ under the worldview uncertainty, for both intruder hypotheses
+(ADR 0006). Both arms receive the identical chain.
+
 **Why the boundary moves, not the physics**: in this CDR stack the graded failure
 family bottoms out near P(LoS) ~ 1e-3; dialling the cell physics rarer flips the
 failure mechanism to a discrete, bimodal *cliff* where fixed-level ladders collapse
@@ -28,7 +37,7 @@ vel_ci95 ∈ {1, 3} m/s, dpsi ∈ {45, 90, 135, 180}°, 16 cells); strong-CDR ce
 .venv/bin/python scripts/validation/mc_vs_ips_campaign.py
 
 # the server run: 24 cells × 5M encounters, d* at each cell's 1e-4 quantile,
-# IPS N=256 — and raise --reps toward the core count
+# IPS N=1000 — and raise --reps toward the core count
 .venv/bin/python scripts/validation/mc_vs_ips_campaign.py --production --reps 96 --jobs 96
 ```
 
@@ -38,15 +47,20 @@ Deterministic per seed; rerunning reproduces the tables bit for bit.
 
 ## Sizing it for the server
 
-- **MC arm** parallelises over episodes and dominates the budget: 120 M encounters
-  (24 × 5 M) at ~8–10k encounters/s on ~100 workers ≈ **3.5–4.5 h**.
+- **MC arm** parallelises over episodes and dominates the budget. The long-approach
+  regime makes each episode ~4× the short-tlos cost (~180–200 s of simulated flight),
+  so expect ~2–2.5k encounters/s on ~100 workers: 120 M encounters (24 × 5 M) ≈
+  **13–17 h**. Trim `--encounters` if that must fit a shorter window (1 M/cell ≈ 3 h
+  and still ~100 anchor events at 1e-4).
 - **IPS arm** parallelises over *replications* (particles within one replication are
   serial), so its ceiling is `min(jobs, reps)`. With `--reps 96` on ~100 cores each
-  cell's wall is ≈ one replication (~60–90 s for a ~12-shell ladder at N=256) →
-  **~20–30 min**, with 96 replications per cell of statistical quality.
-- Total ≈ **4–5 hours** on ~100 cores; pad ~50% for slower server cores. Memory is a
-  few MB per worker plus ~40 MB per cell of retained min-sep data (~1 GB total in the
-  parent).
+  cell's wall is ≈ one replication → **~8 h at the N=1000 default** over 24 cells
+  (~2 h at `--particles 256`, at real risk of ladder degeneracy in this regime —
+  the smoke measured mid-ladder conditionals near 0.13, which thin clouds cannot
+  carry), with 96 replications per cell of statistical quality.
+- Total ≈ **~1 day at the defaults** (MC 13–17 h + IPS ~8 h) on ~100 cores; pad for
+  slower cores. Memory: a few MB per worker plus ~40 MB per cell of retained min-sep (~1 GB
+  in the parent).
 
 ## Outputs (under `results/validation/`)
 

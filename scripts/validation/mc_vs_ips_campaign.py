@@ -10,6 +10,13 @@ in ``results/ips_mc_comparison/`` (ratio 1.18 there). The 50 m protected-zone ra
 kept as an intermediate rung, so the classic P(LoS) comparison rides along for free as
 a secondary column.
 
+The flown encounter: both drones at 15 m/s, aimed dead-centre (dcpa 0), spawned
+*outside* the detection horizon (tlos 150 s > lookahead 120 s — ballistic approach
+until the predicted CPA enters the horizon at t ~ 30 s, the JRESS-style regime). The
+CDR chain is state-based CPA detection, MVP resolution (margin 1.05), and
+Probabilistic FTR recovery (gamma 0.999) — release only when P(DCPA > rpz) > gamma
+under the worldview uncertainty, for both intruder hypotheses.
+
 Why the boundary moves and the physics does not: in this CDR stack the *graded* failure
 family bottoms out around P(LoS) ~ 1e-3 — push the cell physics rarer and the failure
 mechanism turns discrete (never-detected encounters, a bimodal min-sep, the *cliff* of
@@ -26,12 +33,13 @@ anchor thins), verdicts only when the IPS arm ran >= 4 replications.
     .venv/bin/python scripts/validation/mc_vs_ips_campaign.py --production  # the server run
 
 Dummy budgets smoke the *pipeline* (sweep, boundary placement, ladders, verdicts,
-outputs) in a few minutes at a shallower target (2e-3); dummy verdicts are UNJUDGED by
-design. Production on ~100 cores: the MC arm dominates — 24 cells x 5M = 120M
-encounters at ~8-10k encounters/s is ~3.5-4.5 h — plus ~30-40 min of IPS; raise
---reps toward the core count (IPS parallelism is min(--jobs, --reps); more
-replications is also statistically the right dial). Retained min-sep data is ~40 MB
-per cell in the parent process (~1 GB over the default grid).
+outputs) at a shallower target (2e-3); dummy verdicts are UNJUDGED by design. Note the
+long-approach regime makes every episode ~4x the old 20 s-tlos cost (settle ~180-200 s
+of sim at dt 0.2, plus ProbFTR's per-tick integral): on ~100 workers expect roughly
+~2-2.5k encounters/s — the 24 x 5M MC arm is ~13-17 h — and IPS replications of
+several minutes each (N=256; ~4x that at N=1000). Raise --reps toward the core count
+(IPS parallelism is min(--jobs, --reps)); trim --encounters if the MC arm must fit a
+shorter window. Retained min-sep data is ~40 MB per cell in the parent (~1 GB).
 
 Outputs under results/validation/: a tidy CSV (one row per cell, both thresholds), a
 Markdown summary with verdicts, and a JSONL with the ladder and every replication's
@@ -53,8 +61,10 @@ from blueskycdarr import (
     MULTIROTOR,
     CommConfig,
     Config,
+    ConflictConfig,
     Models,
     PairwiseEncounter,
+    ProbabilisticFTR,
     SimulationConfig,
     Sweep,
     UncertaintyConfig,
@@ -62,11 +72,21 @@ from blueskycdarr import (
 )
 from blueskycdarr.ips import estimate_rare_prob
 
+# The CDR chain, explicit even where it matches the package default so the campaign
+# record is self-contained: state-based CPA detection at a 120 s lookahead, MVP
+# resolution at margin 1.05, and Probabilistic FTR recovery (gamma 0.999, ADR 0006) —
+# passed to BOTH arms, so a component change reaches both or neither.
 RPZ = 50.0
+CONFLICT = ConflictConfig(rpz=RPZ, t_lookahead=120.0, resolution_margin=1.05)
 COMM = CommConfig(reception_prob=0.8, latency_s=0.3)
-SIM = SimulationConfig(t_max=90.0)
-BASE_CONFIG = Config(comm=COMM, simulation=SIM)
-TLOS = 20.0
+RECOVERY = ProbabilisticFTR()
+# tlos 150 > lookahead 120: the pair spawns OUTSIDE the detection horizon and flies
+# ballistically until the predicted CPA enters it at t ~ 30 s (the JRESS-style
+# approach), so detection onset is part of the flown encounter rather than given at
+# spawn. t_max leaves ~150 s beyond the ballistic CPA for resolution and settling.
+TLOS = 150.0
+SIM = SimulationConfig(t_max=300.0)
+BASE_CONFIG = Config(comm=COMM, simulation=SIM, conflict=CONFLICT)
 OUT_DIR = Path("results/validation")
 
 # The default production grid spans three CDR regimes on purpose: pos_ci95 30 m is the
@@ -90,7 +110,9 @@ def parse_args() -> argparse.Namespace:
                    help="probability the rare boundary d* is placed at "
                         "(default: 2e-3 dummy, 1e-4 production)")
     p.add_argument("--particles", type=int, default=None,
-                   help="IPS cloud size N (default: 48 dummy, 256 production)")
+                   help="IPS cloud size N (default: 48 dummy, 1000 production — the "
+                        "long-approach regime's ladders degenerate below ~256; drop to "
+                        "256 only to trade robustness for wall time)")
     p.add_argument("--reps", type=int, default=None,
                    help="IPS replications — also the IPS parallelism ceiling "
                         "(default: 2 dummy, 8 production; raise toward the core count)")
@@ -175,7 +197,7 @@ def main() -> None:
             grid[axis] = [float(v) for v in override]
     n_encounters = args.encounters or (5_000_000 if args.production else 20_000)
     target_p = args.target_p or (1e-4 if args.production else 2e-3)
-    n_particles = args.particles or (256 if args.production else 48)
+    n_particles = args.particles or (1000 if args.production else 48)
     reps = args.reps or (8 if args.production else 2)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -194,6 +216,7 @@ def main() -> None:
         models=Models(
             aircraft=MULTIROTOR,
             scenario=PairwiseEncounter(pairs=(5, 4), dcpa=0.0, tlos=TLOS),
+            recovery=RECOVERY,
         ),
         backend=MC(n_encounters=n_encounters),
         base_config=BASE_CONFIG,
@@ -225,7 +248,8 @@ def main() -> None:
                 PairwiseEncounter(pairs=(1, 1), dpsi=dpsi, dcpa=0.0, tlos=TLOS),
                 MULTIROTOR,
                 Config(uncertainty=UncertaintyConfig(pos_ci95=pos, vel_ci95=vel),
-                       comm=COMM, simulation=SIM),
+                       comm=COMM, simulation=SIM, conflict=CONFLICT),
+                recovery=RECOVERY,
                 levels=ladder,
                 n_particles=n_particles,
                 reps=reps,
@@ -277,8 +301,10 @@ def main() -> None:
         f.write(f"# MC vs IPS validation at target p ~ {target_p:g} — {stamp}\n\n")
         f.write(f"Seed {args.seed} · MC {n_encounters}/cell · IPS N={n_particles}, "
                 f"{reps} reps · comm rx={COMM.reception_prob} lat={COMM.latency_s}s · "
-                f"dcpa 0, tlos {TLOS:g}s, rpz {RPZ:g}m · d* at each cell's "
-                f"{target_p:g} depth quantile\n\n")
+                f"dcpa 0, tlos {TLOS:g}s, lookahead {CONFLICT.t_lookahead:g}s, "
+                f"rpz {RPZ:g}m · state-based CD, MVP (margin "
+                f"{CONFLICT.resolution_margin:g}), ProbFTR (gamma {RECOVERY.gamma:g}) · "
+                f"d* at each cell's {target_p:g} depth quantile\n\n")
         f.write(f"**{n_pass} PASS / {n_fail} FAIL / {n_anchorless} NO_ANCHOR / "
                 f"{n_unjudged} UNJUDGED** of {len(rows)} cells · MC arm {t_mc:.0f}s · "
                 f"total {total:.0f}s\n\n")
