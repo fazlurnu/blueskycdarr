@@ -1,65 +1,69 @@
-# MC-vs-IPS validation campaign
+# MC-vs-IPS validation campaign at P ~ 1e-4
 
-One script: [`mc_vs_ips_campaign.py`](mc_vs_ips_campaign.py). Per cell of
-(pos_ci95 × vel_ci95 × crossing angle), it estimates the per-encounter P(LoS) twice —
-plain Monte Carlo (one declarative sweep, common random numbers across cells) and
-fixed-level IPS (ladder placed from that cell's own MC min-sep quantiles, ~0.45
-conditional survival per shell) — and judges the ratio in ADR 0022 bands.
+One script: [`mc_vs_ips_campaign.py`](mc_vs_ips_campaign.py). Every cell of
+(pos_ci95 × vel_ci95 × crossing angle) is validated **at the same target
+probability** — default 1e-4 — rather than at the same distance: the Monte-Carlo arm
+(1,000,000 encounters per cell) keeps the cell's full min-sep distribution, the rare
+boundary **d\*** is placed at that cell's own empirical 1e-4 depth quantile (~100
+events → a tight 2× anchor), and the IPS ladder descends to d\* on quantile-placed
+shells (~0.45 conditional survival each — the recipe validated at the 1e-4 boundary in
+`results/ips_mc_comparison/`). The 50 m protected-zone radius is kept as an
+intermediate rung, so the classic P(LoS) ratio is reported for free from the same
+ladders.
+
+**Why the boundary moves, not the physics**: in this CDR stack the graded failure
+family bottoms out near P(LoS) ~ 1e-3; dialling the cell physics rarer flips the
+failure mechanism to a discrete, bimodal *cliff* where fixed-level ladders collapse
+(see `docs/rare-events.md`). Depth of breach stays graded in every cell, so the 1e-4
+event that is actually ladderable is a deep breach — and that is what d\* measures.
+For the same reason the default grid keeps the graded corner (pos_ci95 ∈ {25, 40} m,
+vel_ci95 ∈ {1, 3} m/s, dpsi ∈ {45, 90, 135, 180}°, 16 cells); strong-CDR cells
+(pos_ci95 ≈ 10 m) are cliff-structured and would need AMS, not a finer fixed ladder.
 
 ## Run
 
 ```bash
-# smoke the whole pipeline locally (~2 min, 4 cells, tiny budgets — verdicts at these
-# budgets exercise the plumbing, not the science; judge agreement at --production)
+# smoke the whole pipeline locally (~3 min, 4 cells, 20k encounters, target 2e-3 —
+# verdicts at these budgets are UNJUDGED by design; judge at --production)
 .venv/bin/python scripts/validation/mc_vs_ips_campaign.py
 
-# the server run (24 cells: pos {10,25,40} × vel {1,3} × dpsi {45,90,135,180};
-# 20k MC encounters/cell, IPS N=128 × 8 replications)
-.venv/bin/python scripts/validation/mc_vs_ips_campaign.py --production
+# the server run: 16 cells × 1M encounters, d* at each cell's 1e-4 quantile,
+# IPS N=256 — and raise --reps toward the core count
+.venv/bin/python scripts/validation/mc_vs_ips_campaign.py --production --reps 96 --jobs 96
 ```
 
-Overrides: `--encounters`, `--particles`, `--reps`, `--jobs`, `--seed`. Everything is
-deterministic per seed; rerunning reproduces the tables bit for bit.
+Overrides: `--encounters`, `--target-p`, `--particles`, `--reps`, `--jobs`, `--seed`.
+Deterministic per seed; rerunning reproduces the tables bit for bit.
 
 ## Sizing it for the server
 
-- The **MC arm** parallelises over episodes: `--jobs -1` uses every core, throughput
-  ~750 encounters/s on 8 cores (scales with cores).
-- The **IPS arm** parallelises over *replications only* — particles within one
-  replication are serial through that worker's engine — so its effective parallelism
-  is `min(jobs, reps)`. On a 32-core machine, raise `--reps` (e.g. 16–32): more
-  replications is also statistically the right dial, since replications, not
-  particles, are the unit of spread.
-- Rough production wall on 8 cores: MC ≈ 10–12 min (480k encounters), IPS ≈ 10–15 min
-  (24 cells × N=128 × 8 reps). Memory is negligible.
+- **MC arm** parallelises over episodes and dominates the budget: 16 M encounters at
+  ~8–10k encounters/s on ~100 workers ≈ **25–35 min**.
+- **IPS arm** parallelises over *replications* (particles within one replication are
+  serial), so its ceiling is `min(jobs, reps)`. With `--reps 96` on ~100 cores each
+  cell's wall is ≈ one replication (~60–90 s for a ~12-shell ladder at N=256) →
+  **~20–30 min**, with 96 replications per cell of statistical quality.
+- Total ≈ **1 hour** on ~100 cores; pad ~50% for slower server cores. Memory is a few
+  MB per worker plus ~8 MB per cell of retained min-sep data.
 
 ## Outputs (under `results/validation/`)
 
-- `mc_vs_ips.csv` — one row per cell: both estimates, event counts, ratio, collapse
-  count, verdict, wall time.
-- `mc_vs_ips.md` — the summary table with the PASS/FAIL/NO_ANCHOR tally and the
-  band definitions.
+- `mc_vs_ips.csv` — one row per cell: d\*, both estimates at d\* and at the 50 m rpz,
+  both ratios, event counts, collapse count, verdict, wall time.
+- `mc_vs_ips.md` — the summary table with the PASS/FAIL/NO_ANCHOR/UNJUDGED tally.
 - `mc_vs_ips_detail.jsonl` — per cell: the ladder used and every replication's
   survival fractions (what you read when a cell FAILs or collapses).
 
 ## Reading the results
 
-- **UNJUDGED** — fewer than 4 IPS replications ran (the dummy default): the ratio is
-  reported for eyeballing, but with 2 replications the IPS estimate's own spread is
-  unquantifiable, so the campaign refuses to call PASS or FAIL on it.
-- **PASS** — ratio within the band (2× at ≥30 anchor events, 3× at 10–29, 5× at 1–9).
-- **FAIL** — outside the band. Look at the JSONL first: a collapsed replication or a
-  pinch shell (one survival ≪ others) usually explains it — widen `--particles` or
-  accept that the cell is cliff-structured (see `docs/rare-events.md`).
-- **NO_ANCHOR** — MC saw zero events at the rpz boundary within its budget; the cell
-  is beyond MC's reach at this budget and the IPS number stands alone. Raising
-  `--encounters` may recover an anchor; these are also exactly the cells IPS exists
-  for.
-- Collapses (`n_collapsed > 0`) are informative, not errors: the ladder told you its
-  spacing was too aggressive for that cell's failure structure.
-
-Low-noise cells (pos_ci95 = 10) with good reception sit near the *cliff* regime —
-failures there are discrete (never-detected encounters), min-sep is bimodal, and
-fixed-level ladders are expected to struggle (collapse or FAIL) at modest N. That is a
-finding about the method-cell match, not a bug; `docs/rare-events.md` explains, and
-adaptive levels (AMS) are the known remedy if those cells matter.
+- **PASS / FAIL** — the d\* ratio against ADR-0022-style bands: 2× when the anchor
+  has ≥30 events (the design point: ~100 at 1e-4 × 1M), 3× at 10–29, 5× at 1–9.
+- **ratio@rpz** — the same comparison at the classic 50 m LoS boundary, read off the
+  same ladders as a prefix product; expect it tighter than the d\* ratio (far more
+  anchor events, shallower ladder prefix).
+- **UNJUDGED** — fewer than 4 IPS replications (the dummy default): ratios shown for
+  eyeballing only.
+- Collapses (`n_collapsed > 0`) are informative, not errors: at N=256 an occasional
+  collapsed replication marks a pinch shell; many mean the cell is drifting toward
+  cliff structure — check the JSONL survivals, widen `--particles`, or accept the
+  finding.
