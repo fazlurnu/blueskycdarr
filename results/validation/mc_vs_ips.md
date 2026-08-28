@@ -1,8 +1,8 @@
-# MC vs IPS validation at target p ~ 0.002 — 2026-08-28 06:35:17
+# MC vs IPS validation at target p ~ 0.002 — 2026-08-28 07:01:01
 
 Seed 42 · MC 20000/cell · IPS N=48, 2 reps · comm rx=0.8 lat=0.3s · dcpa 0, tlos 20s, rpz 50m · d* at each cell's 0.002 depth quantile
 
-**0 PASS / 0 FAIL / 0 NO_ANCHOR / 4 UNJUDGED** of 4 cells · MC arm 82s · total 104s
+**0 PASS / 0 FAIL / 0 NO_ANCHOR / 4 UNJUDGED** of 4 cells · MC arm 85s · total 107s
 
 | dpsi | pos | vel | d* [m] | P_MC(d*) | events | P_IPS(d*) | ratio | ratio@rpz | collapsed | verdict |
 |---|---|---|---|---|---|---|---|---|---|---|

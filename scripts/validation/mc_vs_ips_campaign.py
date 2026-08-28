@@ -1,12 +1,12 @@
 """MC-vs-IPS validation at P ~ 1e-4, over (pos_ci95, vel_ci95, crossing angle).
 
 Every cell is validated **at the same target probability** (default 1e-4), not at the
-same distance: the Monte-Carlo arm (default 1,000,000 encounters per cell) keeps each
+same distance: the Monte-Carlo arm (default 5,000,000 encounters per cell) keeps each
 cell's full min-sep distribution, the rare boundary ``d*`` is placed at that cell's own
-empirical target-probability order statistic (~100 events at 1e-4 — a tight anchor),
-and the IPS ladder descends to ``d*`` on shells placed at order statistics targeting
-~0.45 conditional survival each — the recipe validated at the 1e-4 boundary in
-``results/ips_mc_comparison/`` (ratio 1.18 there). The 50 m protected-zone radius is
+empirical target-probability order statistic (~500 events at 1e-4 x 5M — a tight
+anchor), and the IPS ladder descends to ``d*`` on shells placed at order statistics
+targeting ~0.45 conditional survival each — the recipe validated at the 1e-4 boundary
+in ``results/ips_mc_comparison/`` (ratio 1.18 there). The 50 m protected-zone radius is
 kept as an intermediate rung, so the classic P(LoS) comparison rides along for free as
 a secondary column.
 
@@ -27,9 +27,11 @@ anchor thins), verdicts only when the IPS arm ran >= 4 replications.
 
 Dummy budgets smoke the *pipeline* (sweep, boundary placement, ladders, verdicts,
 outputs) in a few minutes at a shallower target (2e-3); dummy verdicts are UNJUDGED by
-design. Production on ~100 cores: MC ~25-35 min (16 cells x 1M at ~8-10k encounters/s),
-IPS ~20-30 min — and raise --reps toward the core count (IPS parallelism is
-min(--jobs, --reps); more replications is also statistically the right dial).
+design. Production on ~100 cores: the MC arm dominates — 24 cells x 5M = 120M
+encounters at ~8-10k encounters/s is ~3.5-4.5 h — plus ~30-40 min of IPS; raise
+--reps toward the core count (IPS parallelism is min(--jobs, --reps); more
+replications is also statistically the right dial). Retained min-sep data is ~40 MB
+per cell in the parent process (~1 GB over the default grid).
 
 Outputs under results/validation/: a tidy CSV (one row per cell, both thresholds), a
 Markdown summary with verdicts, and a JSONL with the ladder and every replication's
@@ -67,10 +69,13 @@ BASE_CONFIG = Config(comm=COMM, simulation=SIM)
 TLOS = 20.0
 OUT_DIR = Path("results/validation")
 
-# The graded corner: cells whose breach *depth* is continuously distributed, so a
-# target-probability boundary is reachable by a fixed ladder (module docstring).
+# The default production grid spans three CDR regimes on purpose: pos_ci95 30 m is the
+# graded family; 10 m is the measured *cliff* (bimodal min-sep — expect d* above the
+# rpz, thin rpz columns, and some collapses, recorded as findings); 3 m is precision
+# navigation, where failures should be the resolution-margin tail. The quantile-placed
+# boundary adapts to each. Override any axis from the command line.
 PRODUCTION_GRID = dict(
-    pos_ci95=[25.0, 40.0], vel_ci95=[1.0, 3.0], dpsi=[45.0, 90.0, 135.0, 180.0]
+    pos_ci95=[3.0, 10.0, 30.0], vel_ci95=[1.0, 3.0], dpsi=[45.0, 90.0, 135.0, 180.0]
 )
 DUMMY_GRID = dict(pos_ci95=[25.0, 40.0], vel_ci95=[3.0], dpsi=[90.0, 135.0])
 
@@ -80,7 +85,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--production", action="store_true",
                    help="full grid and budgets (16 cells; the server run)")
     p.add_argument("--encounters", type=int, default=None,
-                   help="MC encounters per cell (default: 20000 dummy, 1000000 production)")
+                   help="MC encounters per cell (default: 20000 dummy, 5000000 production)")
     p.add_argument("--target-p", type=float, default=None, dest="target_p",
                    help="probability the rare boundary d* is placed at "
                         "(default: 2e-3 dummy, 1e-4 production)")
@@ -91,6 +96,12 @@ def parse_args() -> argparse.Namespace:
                         "(default: 2 dummy, 8 production; raise toward the core count)")
     p.add_argument("--jobs", type=int, default=-1, help="workers; -1 = all cores")
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--pos-ci95", type=float, nargs="+", default=None, dest="pos_grid",
+                   help="override the pos_ci95 axis [m], e.g. --pos-ci95 3 10 30")
+    p.add_argument("--vel-ci95", type=float, nargs="+", default=None, dest="vel_grid",
+                   help="override the vel_ci95 axis [m/s]")
+    p.add_argument("--dpsi", type=float, nargs="+", default=None, dest="dpsi_grid",
+                   help="override the crossing-angle axis [deg]")
     return p.parse_args()
 
 
@@ -157,8 +168,12 @@ def verdict(ratio: float, n_events: int, reps: int) -> str:
 
 def main() -> None:
     args = parse_args()
-    grid = PRODUCTION_GRID if args.production else DUMMY_GRID
-    n_encounters = args.encounters or (1_000_000 if args.production else 20_000)
+    grid = dict(PRODUCTION_GRID if args.production else DUMMY_GRID)
+    for axis, override in (("pos_ci95", args.pos_grid), ("vel_ci95", args.vel_grid),
+                           ("dpsi", args.dpsi_grid)):
+        if override is not None:
+            grid[axis] = [float(v) for v in override]
+    n_encounters = args.encounters or (5_000_000 if args.production else 20_000)
     target_p = args.target_p or (1e-4 if args.production else 2e-3)
     n_particles = args.particles or (256 if args.production else 48)
     reps = args.reps or (8 if args.production else 2)
