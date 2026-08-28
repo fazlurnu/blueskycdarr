@@ -103,6 +103,12 @@ class ContactTable:
         perm = np.asarray(counterpart(np.arange(self.states.n)))
         return self.states.reindexed(perm), self.valid[perm]
 
+    def copy(self) -> ContactTable:
+        """An independent copy — cloning a particle clones what each aircraft has heard."""
+        return ContactTable(
+            states=self.states.copy(), valid=self.valid.copy(), t_tx=self.t_tx.copy()
+        )
+
 
 @dataclass
 class _Delivery:
@@ -115,24 +121,37 @@ class _Delivery:
 @dataclass
 class BroadcastChannel:
     """The per-episode broadcast machinery. Advance with :meth:`transmit_due`, then
-    :meth:`deliver_due`; both are idempotent within a time step."""
+    :meth:`deliver_due`; both are idempotent within a time step.
+
+    The channel is **state only** — the transmit schedule (``next_tx``) and the messages
+    in flight (``_pending``); the streams that decide measurement noise, reception and
+    jitter are method *arguments*, never fields. The split is what makes a mid-episode
+    clone meaningful for rare-event splitting (IPS): :meth:`copy` duplicates the schedule
+    and the in-flight messages exactly, and the caller hands each clone fresh forward
+    streams — clones share their past and diverge only in their future noise (the
+    contract OpenCDaRR's ADR 0017 §4 sets for splitting, mirrored here).
+    """
 
     comm: CommConfig
     uncertainty: UncertaintyConfig
-    rng_measurement: np.random.Generator
-    rng_reception: np.random.Generator
-    rng_schedule: np.random.Generator
     shape: NoiseShape = DEFAULT_NOISE
     next_tx: np.ndarray = field(init=False)
     _pending: deque[_Delivery] = field(init=False, default_factory=deque)
 
-    def initialise(self, n: int) -> None:
+    def initialise(self, n: int, rng_schedule: np.random.Generator) -> None:
         if self.comm.broadcast_random_phase:
-            self.next_tx = self.rng_schedule.uniform(0.0, self.comm.broadcast_interval_s, n)
+            self.next_tx = rng_schedule.uniform(0.0, self.comm.broadcast_interval_s, n)
         else:
             self.next_tx = np.zeros(n)
 
-    def transmit_due(self, t: float, truth: StateArrays) -> None:
+    def transmit_due(
+        self,
+        t: float,
+        truth: StateArrays,
+        rng_measurement: np.random.Generator,
+        rng_reception: np.random.Generator,
+        rng_schedule: np.random.Generator,
+    ) -> None:
         """Fire every broadcast scheduled at or before ``t``.
 
         The snapshot content is the current truth plus measurement noise; reception and
@@ -142,9 +161,9 @@ class BroadcastChannel:
         due = np.flatnonzero(self.next_tx <= t + _EPS)
         if due.size:
             snapshot = noisy_snapshot(
-                truth, due, self.uncertainty, self.rng_measurement, self.shape
+                truth, due, self.uncertainty, rng_measurement, self.shape
             )
-            heard = self.rng_reception.random(due.size) <= self.comm.reception_prob
+            heard = rng_reception.random(due.size) <= self.comm.reception_prob
             rx = np.asarray(counterpart(due))
             in_range = (
                 distance_m(truth.lat[due], truth.lon[due], truth.lat[rx], truth.lon[rx])
@@ -158,9 +177,23 @@ class BroadcastChannel:
                 )
             jitter = self.comm.broadcast_jitter_s
             gaps = self.comm.broadcast_interval_s + (
-                self.rng_schedule.uniform(-jitter, jitter, due.size) if jitter > 0 else 0.0
+                rng_schedule.uniform(-jitter, jitter, due.size) if jitter > 0 else 0.0
             )
             self.next_tx[due] += gaps
+
+    def copy(self) -> BroadcastChannel:
+        """An independent copy of the channel *state*; the frozen config rides shared.
+
+        In-flight deliveries are rebuilt element by element — a clone landing a message
+        must not mutate its sibling's contact table input.
+        """
+        dup = BroadcastChannel(comm=self.comm, uncertainty=self.uncertainty, shape=self.shape)
+        dup.next_tx = self.next_tx.copy()
+        dup._pending = deque(
+            _Delivery(t_due=d.t_due, idx=d.idx.copy(), snapshot=d.snapshot.copy(), t_tx=d.t_tx)
+            for d in self._pending
+        )
+        return dup
 
     def deliver_due(self, t: float, contacts: ContactTable) -> None:
         """Land every in-flight message whose latency has elapsed, oldest first."""

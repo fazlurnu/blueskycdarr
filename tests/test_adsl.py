@@ -25,15 +25,14 @@ def _fleet(n: int, spacing_m: float = 1000.0) -> StateArrays:
     )
 
 
-def _channel(comm: CommConfig, uncertainty: UncertaintyConfig, seed: int = 0) -> BroadcastChannel:
+def _channel(
+    comm: CommConfig, uncertainty: UncertaintyConfig, seed: int = 0
+) -> tuple[BroadcastChannel, tuple[np.random.Generator, ...]]:
+    """A channel plus its (measurement, reception, schedule) streams — the streams are
+    method arguments now, not fields (the state/streams split IPS cloning rests on)."""
     streams = spawn(root_seed_sequence(seed), 3)
-    return BroadcastChannel(
-        comm=comm,
-        uncertainty=uncertainty,
-        rng_measurement=generator(streams[0]),
-        rng_reception=generator(streams[1]),
-        rng_schedule=generator(streams[2]),
-    )
+    rngs = tuple(generator(s) for s in streams)
+    return BroadcastChannel(comm=comm, uncertainty=uncertainty), rngs
 
 
 # --- measurement noise -----------------------------------------------------------------
@@ -77,13 +76,13 @@ def test_zero_uncertainty_is_the_identity() -> None:
 
 def test_reception_probability_is_honoured_per_transmission() -> None:
     truth = _fleet(2)
-    channel = _channel(CommConfig(reception_prob=0.3), UncertaintyConfig())
-    channel.initialise(truth.n)
+    channel, rngs = _channel(CommConfig(reception_prob=0.3), UncertaintyConfig())
+    channel.initialise(truth.n, rngs[2])
     contacts = ContactTable.empty(truth)
     delivered = 0
     for k in range(4000):
         t = float(k)
-        channel.transmit_due(t, truth)
+        channel.transmit_due(t, truth, *rngs)
         channel.deliver_due(t, contacts)
         delivered += int(contacts.t_tx[0] == t)  # a fresh contact carries this tick's stamp
     assert abs(delivered / 4000 - 0.3) < 0.03
@@ -91,14 +90,14 @@ def test_reception_probability_is_honoured_per_transmission() -> None:
 
 def test_jitter_keeps_gaps_inside_the_configured_bounds() -> None:
     truth = _fleet(2)
-    channel = _channel(
+    channel, rngs = _channel(
         CommConfig(broadcast_interval_s=1.0, broadcast_jitter_s=0.2), UncertaintyConfig()
     )
-    channel.initialise(truth.n)
+    channel.initialise(truth.n, rngs[2])
     gaps = []
     for _ in range(500):
         t = float(channel.next_tx[0])  # fire aircraft 0's slot exactly when it is due
-        channel.transmit_due(t, truth)
+        channel.transmit_due(t, truth, *rngs)
         gaps.append(float(channel.next_tx[0]) - t)
     gaps_arr = np.asarray(gaps)
     assert gaps_arr.min() >= 0.8 - 1e-9 and gaps_arr.max() <= 1.2 + 1e-9
@@ -107,11 +106,11 @@ def test_jitter_keeps_gaps_inside_the_configured_bounds() -> None:
 
 def test_latency_delays_usability_and_the_content_is_the_transmit_time_state() -> None:
     truth = _fleet(2)
-    channel = _channel(CommConfig(latency_s=0.5), UncertaintyConfig())
-    channel.initialise(truth.n)
+    channel, rngs = _channel(CommConfig(latency_s=0.5), UncertaintyConfig())
+    channel.initialise(truth.n, rngs[2])
     contacts = ContactTable.empty(truth)
 
-    channel.transmit_due(0.0, truth)
+    channel.transmit_due(0.0, truth, *rngs)
     channel.deliver_due(0.4, contacts)
     assert not contacts.valid.any()  # still in flight
 
@@ -127,10 +126,10 @@ def test_surveillance_range_is_a_hard_gate_at_transmit_time() -> None:
     near = _fleet(2, spacing_m=400.0)
     far = _fleet(2, spacing_m=4000.0)
     for truth, expect in ((near, True), (far, False)):
-        channel = _channel(CommConfig(max_range_m=1000.0), UncertaintyConfig())
-        channel.initialise(truth.n)
+        channel, rngs = _channel(CommConfig(max_range_m=1000.0), UncertaintyConfig())
+        channel.initialise(truth.n, rngs[2])
         contacts = ContactTable.empty(truth)
-        channel.transmit_due(0.0, truth)
+        channel.transmit_due(0.0, truth, *rngs)
         channel.deliver_due(0.0, contacts)
         assert bool(contacts.valid.all()) is expect
 
@@ -148,13 +147,13 @@ def test_reduces_to_cdarr_channel_without_jitter_latency_and_gate() -> None:
     """interval = CDR cadence, no jitter/latency/gate: exactly one delivery per tick,
     and a lost transmission leaves the previous contact standing (the holdover)."""
     truth = _fleet(2)
-    channel = _channel(CommConfig(reception_prob=0.5), UncertaintyConfig(), seed=9)
-    channel.initialise(truth.n)
+    channel, rngs = _channel(CommConfig(reception_prob=0.5), UncertaintyConfig(), seed=9)
+    channel.initialise(truth.n, rngs[2])
     contacts = ContactTable.empty(truth)
     seen_tx_times: list[float] = []
     for k in range(200):
         t = float(k)
-        channel.transmit_due(t, truth)
+        channel.transmit_due(t, truth, *rngs)
         channel.deliver_due(t, contacts)
         if contacts.valid[0]:
             seen_tx_times.append(float(contacts.t_tx[0]))
@@ -162,3 +161,29 @@ def test_reduces_to_cdarr_channel_without_jitter_latency_and_gate() -> None:
     assert (np.diff(held) >= 0).all()  # never goes backwards
     assert set(np.unique(held)) < set(float(k) for k in range(200))  # only tick-times
     assert (np.diff(held) > 1.0 + 1e-9).any()  # some losses -> holdover across ticks
+
+
+def test_channel_and_contact_copies_share_the_past_but_not_the_future() -> None:
+    """The IPS clone contract: a copy holds the same schedule, in-flight messages and
+    contacts, and nothing done to one side reaches the other."""
+    truth = _fleet(2)
+    channel, rngs = _channel(CommConfig(latency_s=0.5), UncertaintyConfig())
+    channel.initialise(truth.n, rngs[2])
+    channel.transmit_due(0.0, truth, *rngs)  # one message now in flight
+    dup = channel.copy()
+    np.testing.assert_array_equal(dup.next_tx, channel.next_tx)
+
+    # landing the copy's message must not drain the original's queue
+    dup_contacts = ContactTable.empty(truth)
+    dup.deliver_due(0.5, dup_contacts)
+    assert dup_contacts.valid.all()
+    original_contacts = ContactTable.empty(truth)
+    channel.deliver_due(0.5, original_contacts)
+    assert original_contacts.valid.all()
+
+    # and a contact-table copy is independent storage, not a view
+    clone = original_contacts.copy()
+    clone.valid[:] = False
+    clone.states.lat += 1.0
+    assert original_contacts.valid.all()
+    np.testing.assert_array_equal(original_contacts.states.lat, truth.lat)
