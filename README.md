@@ -26,7 +26,7 @@ Relations, in one line each:
   mirrors its experiment UI and vault conventions, and deliberately *keeps* the BlueSky
   runtime its ADR 0003 removed — two independent engines, one study.
 - **MixedVarLSENew** (`~/Projects/MixedVarLSENew`) — the consumer;
-  `cdarr.blackbox.make_blackbox` implements its oracle contract.
+  `blueskycdarr.blackbox.make_blackbox` implements its oracle contract.
 
 ## Install
 
@@ -54,8 +54,8 @@ which writes `results/mixedvarlse.csv` (one row per condition: swept levels,
 provenance card. The same study in Python:
 
 ```python
-from cdarr import Fixed, Sweep, MC, Models, Config, run_experiment
-from cdarr import MULTIROTOR, PairwiseEncounter
+from blueskycdarr import Fixed, Sweep, MC, Models, Config, run_experiment
+from blueskycdarr import MULTIROTOR, PairwiseEncounter
 
 res = run_experiment(
     {"aircraft": Sweep(["multirotor", "fixedwing"]),
@@ -75,7 +75,7 @@ res.cell(aircraft="multirotor", pos_ci95=3.0, vel_ci95=1.0)   # the raw estimate
 As the MixedVarLSENew oracle:
 
 ```python
-from cdarr.blackbox import make_blackbox
+from blueskycdarr.blackbox import make_blackbox
 blackbox = make_blackbox(n_encounters=300, seed=7, n_jobs=-1)
 # run_lse(space, blackbox, threshold=np.log10(0.02), store="...jsonl")
 ```

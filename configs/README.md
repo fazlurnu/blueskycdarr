@@ -51,12 +51,12 @@ File-driven, from a shell:
 or the single-condition one-liner in Python:
 
 ```python
-from cdarr import load_run, run_one_experiment
+from blueskycdarr import load_run, run_one_experiment
 run_one_experiment(*load_run("configs/mixedvarlse.yaml"))
 ```
 
 Declared sweeps in Python reach the same machinery:
 
 ```python
-from cdarr import Fixed, Sweep, MC, Models, run_experiment
+from blueskycdarr import Fixed, Sweep, MC, Models, run_experiment
 ```

@@ -1,4 +1,4 @@
-"""Locks for the MixedVarLSENew adapter (``cdarr/blackbox.py``).
+"""Locks for the MixedVarLSENew adapter (``blueskycdarr/blackbox.py``).
 
 The estimator math is pinned against hand-computed values (the test owns the expected
 numbers); the end-to-end oracle runs one tiny design point through the engine.
@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from cdarr.blackbox import log10_p_los, make_blackbox
+from blueskycdarr.blackbox import log10_p_los, make_blackbox
 
 
 def test_log10_p_los_matches_the_hand_computed_jeffreys_estimator() -> None:
@@ -27,7 +27,7 @@ def test_zero_losses_stay_finite() -> None:
 
 def test_the_oracle_answers_a_design_point_in_order() -> None:
     pytest.importorskip("bluesky")
-    from cdarr.scenario import PairwiseEncounter
+    from blueskycdarr.scenario import PairwiseEncounter
 
     blackbox = make_blackbox(
         n_encounters=2,

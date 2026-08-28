@@ -27,8 +27,8 @@ from jress_common import (
     save,
 )
 
-from cdarr import MC, Fixed, ProbabilisticFTR, Sweep, run_experiment
-from cdarr.recovery import FTR
+from blueskycdarr import MC, Fixed, ProbabilisticFTR, Sweep, run_experiment
+from blueskycdarr.recovery import FTR
 
 PRODUCTION_RUNS = 100
 GAMMAS = [0.999, 0.99, 0.9, 0.75, 0.5]

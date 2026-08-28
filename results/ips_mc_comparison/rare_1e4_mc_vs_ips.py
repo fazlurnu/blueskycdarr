@@ -14,9 +14,9 @@ import time
 
 import numpy as np
 
-from cdarr import MC, Config, Fixed, MULTIROTOR, Models, PairwiseEncounter, run_experiment
-from cdarr.config import CommConfig, SimulationConfig, UncertaintyConfig
-from cdarr.ips import estimate_rare_prob
+from blueskycdarr import MC, Config, Fixed, MULTIROTOR, Models, PairwiseEncounter, run_experiment
+from blueskycdarr.config import CommConfig, SimulationConfig, UncertaintyConfig
+from blueskycdarr.ips import estimate_rare_prob
 
 CONFIG = Config(
     uncertainty=UncertaintyConfig(pos_ci95=25.0, vel_ci95=3.0),

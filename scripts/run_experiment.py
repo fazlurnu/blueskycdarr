@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from cdarr import load_run, run_experiment, sweep_from_file
+from blueskycdarr import load_run, run_experiment, sweep_from_file
 
 
 def main() -> None:

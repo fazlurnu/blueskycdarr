@@ -26,7 +26,7 @@ neighbouring cells is sampling noise.
 - **Whole episodes, honest counts.** `MC(n_encounters)` is a floor: episodes fly
   `rows x cols` pairs each, the count rounds up, and the estimate reports the encounters
   actually flown.
-- **Seed tree** (`cdarr/rng.py`, OpenCDaRR's contract): one root per run;
+- **Seed tree** (`blueskycdarr/rng.py`, OpenCDaRR's contract): one root per run;
   `child(root, j)` is episode *j*'s sequence; each episode fans into five leaves —
   `(geometry, navigation, measurement, reception, schedule)`. Addressing uses `child`
   (stateless), never `spawn`, so a worker rebuilds exactly its slice and re-running an
@@ -55,7 +55,7 @@ neighbouring cells is sampling noise.
 ## Consequences
 
 **Good:** the estimate plugs into MixedVarLSENew's estimator unchanged
-(`cdarr/blackbox.py` is ~40 lines); sweeps are comparable cell to cell; every
+(`blueskycdarr/blackbox.py` is ~40 lines); sweeps are comparable cell to cell; every
 stochastic path is reconstructable from `(seed, episode index)`.
 **Cost:** CRN couples conditions statistically — the per-cell Wilson interval is valid,
 but *differences* between cells are correlated (conservative for the LSE's use).

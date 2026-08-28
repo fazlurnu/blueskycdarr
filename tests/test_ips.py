@@ -1,4 +1,4 @@
-"""Engine-backed locks for the fixed-level IPS estimator (``cdarr/ips.py``).
+"""Engine-backed locks for the fixed-level IPS estimator (``blueskycdarr/ips.py``).
 
 The estimator is validated against its own definition at the two ends where the answer
 is exact — a certain event must survive every shell, an unreachable one must collapse
@@ -19,12 +19,17 @@ import pytest
 
 pytest.importorskip("bluesky")
 
-from cdarr.aircraft import MULTIROTOR  # noqa: E402
-from cdarr.config import CommConfig, Config, SimulationConfig, UncertaintyConfig  # noqa: E402
-from cdarr.episode import run_episode  # noqa: E402
-from cdarr.ips import estimate_rare_prob  # noqa: E402
-from cdarr.rng import child, root_seed_sequence  # noqa: E402
-from cdarr.scenario import PairwiseEncounter  # noqa: E402
+from blueskycdarr.aircraft import MULTIROTOR  # noqa: E402
+from blueskycdarr.config import (  # noqa: E402
+    CommConfig,
+    Config,
+    SimulationConfig,
+    UncertaintyConfig,
+)
+from blueskycdarr.episode import run_episode  # noqa: E402
+from blueskycdarr.ips import estimate_rare_prob  # noqa: E402
+from blueskycdarr.rng import child, root_seed_sequence  # noqa: E402
+from blueskycdarr.scenario import PairwiseEncounter  # noqa: E402
 
 # One encounter per particle, spawned on a collision course (dcpa 0) so the ladder has
 # something to concentrate on; the CDR chain is what stands between spawn and LoS.

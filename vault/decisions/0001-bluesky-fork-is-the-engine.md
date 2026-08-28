@@ -25,7 +25,7 @@ bank-only turning and silently different results.
 
 - **Depend on the fork as an installable requirement**, pinned by branch:
   `bluesky-simulator @ git+https://github.com/fazlurnu/bluesky.git@CDaRR`.
-- **Wrap it at exactly one seam**, `cdarr/engine.py`: the only module that
+- **Wrap it at exactly one seam**, `blueskycdarr/engine.py`: the only module that
   imports `bluesky`. It owns initialisation, creation, unit conversions (knots, NM),
   command stacking and stepping. Detection, resolution, recovery and the broadcast
   channel are pure numpy over state tables and never see `bs.*`.

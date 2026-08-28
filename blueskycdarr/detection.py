@@ -21,8 +21,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from cdarr.geo import enu_offset
-from cdarr.state import StateArrays
+from blueskycdarr.geo import enu_offset
+from blueskycdarr.state import StateArrays
 
 _MIN_REL_SPEED_SQ = 1e-6  # CDaRR's floor against division by zero for parallel flight
 

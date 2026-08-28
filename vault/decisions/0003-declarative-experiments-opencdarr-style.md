@@ -16,7 +16,7 @@ says: the experiment-running interface should be that one.
 ## Decision
 
 Mirror OpenCDaRR's interface at this package's (much smaller) scale, in
-`cdarr/experiment.py`:
+`blueskycdarr/experiment.py`:
 
 - **Declaration.** `run_experiment(axes, models=Models(aircraft, scenario),
   backend=MC(n), base_config=Config(...), seed, n_jobs, card_dir)`; axes are
@@ -66,7 +66,7 @@ Mirror OpenCDaRR's interface at this package's (much smaller) scale, in
 ## Consequences
 
 **Good:** the MixedVarLSENew notebook's blackbox transfers by changing imports
-(`cdarr.blackbox.make_blackbox` ships the adapter); studies diff as YAML.
+(`blueskycdarr.blackbox.make_blackbox` ships the adapter); studies diff as YAML.
 **Cost:** two spellings of a sweep (Python and file) that must stay in step — both parse
 into the same `Sweep` objects and share `_KNOWN_KEYS`, tested together.
 **Obligation:** the vocabulary stays closed; a new declarable name lands with its route,

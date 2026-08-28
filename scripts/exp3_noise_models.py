@@ -31,7 +31,7 @@ from jress_common import (
     save,
 )
 
-from cdarr import (
+from blueskycdarr import (
     MC,
     AnisotropicGaussian,
     AnisotropicMixtureGaussian,
@@ -42,7 +42,7 @@ from cdarr import (
     Sweep,
     run_experiment,
 )
-from cdarr.noise import NoiseShape
+from blueskycdarr.noise import NoiseShape
 
 PRODUCTION_RUNS = 1000
 

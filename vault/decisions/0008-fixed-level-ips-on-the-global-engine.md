@@ -28,8 +28,8 @@ conflict bookkeeping. Restore-then-step reproduces an uninterrupted run exactly
 ## Decision
 
 - **A particle is one encounter, frozen at a post-step boundary**: an engine half
-  (``cdarr.engine.WorldSnapshot``) beside an episode half
-  (``cdarr.episode.EpisodeState``). The cloud is time-multiplexed through the one
+  (``blueskycdarr.engine.WorldSnapshot``) beside an episode half
+  (``blueskycdarr.episode.EpisodeState``). The cloud is time-multiplexed through the one
   global world — evolve restores, copies, advances; freeze snapshots again. Resampling
   *shares* particle values; every evolution leg copies before mutating. Particles are
   plain data, hence picklable: replications fan out over joblib workers, each with its
@@ -71,7 +71,7 @@ conflict bookkeeping. Restore-then-step reproduces an uninterrupted run exactly
 
 ## Consequences
 
-- ``cdarr/ips.py`` (``estimate_rare_prob``); locks in ``tests/test_ips.py`` — exact at
+- ``blueskycdarr/ips.py`` (``estimate_rare_prob``); locks in ``tests/test_ips.py`` — exact at
   both ends (certain event ⇒ every shell survives; unreachable shell ⇒ clean collapse),
   the MC-anchor ratio on a moderate-probability cell, bit-for-bit seed reproducibility.
 - The particle contract itself is pinned in ``tests/test_snapshot_parity.py``,

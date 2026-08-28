@@ -19,7 +19,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from cdarr import (
+from blueskycdarr import (
     MC,
     MULTIROTOR,
     CommConfig,
@@ -31,11 +31,11 @@ from cdarr import (
     UncertaintyConfig,
     run_experiment,
 )
-from cdarr.adsl import BroadcastChannel, ContactTable, noisy_snapshot
-from cdarr.episode import run_episode
-from cdarr.geo import enu_offset
-from cdarr.rng import child, generator, root_seed_sequence, spawn
-from cdarr.state import StateArrays
+from blueskycdarr.adsl import BroadcastChannel, ContactTable, noisy_snapshot
+from blueskycdarr.episode import run_episode
+from blueskycdarr.geo import enu_offset
+from blueskycdarr.rng import child, generator, root_seed_sequence, spawn
+from blueskycdarr.state import StateArrays
 
 ROOT = Path(__file__).resolve().parent.parent
 IMG = ROOT / "vault" / "img"
@@ -295,7 +295,7 @@ def fig_p_los_response(n_jobs: int) -> None:
 
 def fig_recovery_comparison(n_jobs: int) -> None:
     """The three recovery models against uncertainty, the gamma knob, and CDaRR itself."""
-    from cdarr import FTR, PastCPA, ProbabilisticFTR, SimulationConfig
+    from blueskycdarr import FTR, PastCPA, ProbabilisticFTR, SimulationConfig
 
     stressed = Config(
         uncertainty=UncertaintyConfig(vel_ci95=3.0),
@@ -355,7 +355,7 @@ def fig_recovery_comparison(n_jobs: int) -> None:
         rows.append((label, e))
         print(f"  {label:18s} here={e.p_los_run:.4f} ({e.n_los}/{e.n_encounters})"
               f"  CDaRR exp1={cdarr_reference[label]:.4f}")
-    with (RESULTS / "correctness-recovery-cdarr-match.csv").open("w") as f:
+    with (RESULTS / "correctness-recovery-blueskycdarr-match.csv").open("w") as f:
         f.write("recovery,p_los_run,n_los,n_encounters,median_min_sep,cdarr_exp1_p_los\n")
         for label, e in rows:
             f.write(f"{label},{e.p_los_run:.10g},{e.n_los},{e.n_encounters},"

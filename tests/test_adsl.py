@@ -1,4 +1,4 @@
-"""Locks for the ADS-L layer (``cdarr/adsl.py``, ADR 0002).
+"""Locks for the ADS-L layer (``blueskycdarr/adsl.py``, ADR 0002).
 
 Each communication effect is validated against its own definition: noise against the
 configured CI95, reception against its probability, jitter against its bounds, latency
@@ -11,10 +11,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from cdarr.adsl import BroadcastChannel, ContactTable, noisy_snapshot
-from cdarr.config import CommConfig, UncertaintyConfig
-from cdarr.rng import generator, root_seed_sequence, spawn
-from cdarr.state import StateArrays
+from blueskycdarr.adsl import BroadcastChannel, ContactTable, noisy_snapshot
+from blueskycdarr.config import CommConfig, UncertaintyConfig
+from blueskycdarr.rng import generator, root_seed_sequence, spawn
+from blueskycdarr.state import StateArrays
 
 
 def _fleet(n: int, spacing_m: float = 1000.0) -> StateArrays:

@@ -15,12 +15,12 @@ evolve every particle until it either crosses (a *survivor*) or its encounter en
 the product of survival fractions ``prod_k (S_k / N)`` — no per-particle weights.
 
 **A particle is one encounter** at a post-step boundary: an engine half
-(:class:`~cdarr.engine.WorldSnapshot`) beside an episode half
-(:class:`~cdarr.episode.EpisodeState`). The engine is a process-global singleton, so the
+(:class:`~blueskycdarr.engine.WorldSnapshot`) beside an episode half
+(:class:`~blueskycdarr.episode.EpisodeState`). The engine is a process-global singleton, so the
 cloud is **time-multiplexed** through it: evolving a particle restores its snapshot,
 copies its episode state, and advances; freezing a survivor snapshots the world again.
 Clones of one survivor *share* the frozen particle and diverge through the **freshly
-built** per-particle-per-level :class:`~cdarr.episode.EpisodeStreams` — the initial
+built** per-particle-per-level :class:`~blueskycdarr.episode.EpisodeStreams` — the initial
 cloud samples geometry (and the broadcast phase), splitting acts on the forward CNS
 noise (ADR 0017 §4), so IPS estimates the same per-encounter P(LoS) the Monte-Carlo
 backend does. That is what makes cross-checking the two meaningful.
@@ -51,15 +51,15 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from cdarr.aircraft import AircraftSpec
-from cdarr.config import Config
-from cdarr.engine import (
+from blueskycdarr.aircraft import AircraftSpec
+from blueskycdarr.config import Config
+from blueskycdarr.engine import (
     PairwiseWorld,
     WorldSnapshot,
     discard_pending_commands,
     reset_world,
 )
-from cdarr.episode import (
+from blueskycdarr.episode import (
     EpisodeContext,
     EpisodeState,
     EpisodeStreams,
@@ -67,11 +67,11 @@ from cdarr.episode import (
     episode_context,
     init_episode,
 )
-from cdarr.noise import DEFAULT_NOISE, NoiseShape
-from cdarr.recovery import DEFAULT_RECOVERY, Recovery
-from cdarr.resolution import DEFAULT_RESOLVER, Resolver
-from cdarr.rng import child, generator, root_seed_sequence
-from cdarr.scenario import PairwiseEncounter
+from blueskycdarr.noise import DEFAULT_NOISE, NoiseShape
+from blueskycdarr.recovery import DEFAULT_RECOVERY, Recovery
+from blueskycdarr.resolution import DEFAULT_RESOLVER, Resolver
+from blueskycdarr.rng import child, generator, root_seed_sequence
+from blueskycdarr.scenario import PairwiseEncounter
 
 # What a stage of the ladder tells the outside world when it finishes: one line, no
 # state. A rare-event cell is the run that is hours long and otherwise silent, and the
@@ -92,7 +92,7 @@ class Particle:
     closed, so no engine state is kept — such a particle rides through later levels as a
     value, surviving only by overshoot (its accumulated ``min_sep`` already below the
     target) and never touching the engine again. This is also why an end mid-tick — the
-    one boundary that cannot be snapshotted, ``cdarr.episode.advance`` documents it —
+    one boundary that cannot be snapshotted, ``blueskycdarr.episode.advance`` documents it —
     never needs to be.
 
     Treat as immutable even though the episode half is technically mutable: resampling
@@ -376,11 +376,11 @@ def estimate_rare_prob(
 ) -> IPSEstimate:
     """Estimate the rare per-encounter P(LoS) from ``reps`` independent IPS runs.
 
-    The same argument shape as :func:`~cdarr.episode.run_episode`, argument for
+    The same argument shape as :func:`~blueskycdarr.episode.run_episode`, argument for
     argument — the same scenario (``pairs=(1, 1)``; refused otherwise), config and
     swappable models — so a per-cell setting reaches both estimators or neither, and
     the environment is assembled through the same composition root
-    (:func:`~cdarr.episode.episode_context`). What is IPS's own rides keyword-only: the
+    (:func:`~blueskycdarr.episode.episode_context`). What is IPS's own rides keyword-only: the
     ``levels`` ladder (strictly decreasing, ending at the rare boundary — ``rpz`` for
     loss of separation), the per-shell ``n_particles``, the ``reps`` replication count,
     and ``seed`` (the reproducibility root, as ``run_experiment`` takes it — replication
@@ -389,7 +389,7 @@ def estimate_rare_prob(
     ``n_jobs`` is scheduling only, never statistics: ``1`` (the default) runs the
     serial reference in-process; more fans **replications** out over joblib workers,
     each of which initialises its own engine on first use, exactly like the episode
-    fan-out in :mod:`cdarr.experiment`. Every replication is a pure function of its
+    fan-out in :mod:`blueskycdarr.experiment`. Every replication is a pure function of its
     seed subtree, so the two paths return the identical estimate. ``progress`` prints
     one line per finished ladder stage (the experiment layer's idiom) — serial only,
     since worker stdout does not interleave usefully.

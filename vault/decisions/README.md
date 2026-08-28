@@ -20,5 +20,5 @@ because this project is deliberately that project's BlueSky-engine sibling.
 - [[0006-recovery-family-ftr-probftr]] — Past-CPA, FTR and Probabilistic FTR as a
   swappable component; the one-tick command lag the FTR criteria depend on, found by
   cross-validating against CDaRR itself.
-- [[0007-cdarr-parity-batch]] — VO, the noise-shape family, per-pair speed ranges,
+- [[0007-blueskycdarr-parity-batch]] — VO, the noise-shape family, per-pair speed ranges,
   declared accuracy, and mixed pairs: every CDaRR experiment family as a declaration.

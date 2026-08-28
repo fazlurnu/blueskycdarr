@@ -9,7 +9,7 @@ The conventions are OpenCDaRR's (their ADR 0023, mirrored here by ADR 0003):
   the message.
 - **Plain numbers live in flat blocks**; the component slots (``aircraft``,
   ``scenario``, ``recovery``, ``resolver``, ``noise``) are parsed by
-  :func:`cdarr.experiment.load_run`, never stored here.
+  :func:`blueskycdarr.experiment.load_run`, never stored here.
 """
 
 from __future__ import annotations

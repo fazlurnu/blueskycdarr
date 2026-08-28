@@ -37,11 +37,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from cdarr.aircraft import AircraftModel, AircraftSpec, as_pair
-from cdarr.config import ConflictConfig, SimulationConfig
-from cdarr.geo import distance_m
-from cdarr.scenario import PairGeometry, PairwiseEncounter
-from cdarr.state import StateArrays
+from blueskycdarr.aircraft import AircraftModel, AircraftSpec, as_pair
+from blueskycdarr.config import ConflictConfig, SimulationConfig
+from blueskycdarr.geo import distance_m
+from blueskycdarr.scenario import PairGeometry, PairwiseEncounter
+from blueskycdarr.state import StateArrays
 
 M_TO_NM = 1.0 / 1852.0
 MPS_TO_KTS = 1.0 / 0.514444
@@ -89,7 +89,7 @@ def ensure_engine() -> None:
 # BlueSky's per-conflict bookkeeping on ``traf.cd`` lives in plain attributes, not in
 # registered traffic arrays (it is sized by conflict pairs, not by aircraft), so the
 # generic tree walk below misses it. Inert under this package's usage — the CDR chain is
-# cdarr's own and BlueSky's resolver is the do-nothing base class — but it is carried in
+# blueskycdarr's own and BlueSky's resolver is the do-nothing base class — but it is carried in
 # the snapshot anyway so a restored world holds no stale record of another particle.
 _CONFLICT_BOOKKEEPING = (
     "confpairs", "lospairs", "qdr", "dist", "dcpa", "tcpa", "tLOS",
@@ -131,7 +131,7 @@ class WorldSnapshot:
     """A complete copy of the process-global BlueSky world at a post-step boundary.
 
     The engine half of an IPS particle (the episode half is
-    :class:`cdarr.episode.EpisodeState`): :func:`restore_world` overwrites the live world
+    :class:`blueskycdarr.episode.EpisodeState`): :func:`restore_world` overwrites the live world
     with this value and stepping continues **bit-identically** — into the same world
     later, or into one that hosted a different particle of the same cell
     (``tests/test_snapshot_parity.py`` pins both).

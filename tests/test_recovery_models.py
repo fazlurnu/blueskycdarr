@@ -1,4 +1,4 @@
-"""Locks for the recovery family (``cdarr/recovery.py``, ADR 0006).
+"""Locks for the recovery family (``blueskycdarr/recovery.py``, ADR 0006).
 
 The FTR criteria are pinned on hand-computable geometries (line-CPA distances worked out
 in the docstrings); the probabilistic clearance integral is validated against Monte
@@ -13,9 +13,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from cdarr.detection import detect
-from cdarr.geo import track_components
-from cdarr.recovery import (
+from blueskycdarr.detection import detect
+from blueskycdarr.geo import track_components
+from blueskycdarr.recovery import (
     FTR,
     PastCPA,
     ProbabilisticFTR,
@@ -24,7 +24,7 @@ from cdarr.recovery import (
     recovered_mask,
     recovery_from_spec,
 )
-from cdarr.state import StateArrays
+from blueskycdarr.state import StateArrays
 
 _LAT = 52.0
 _M_PER_DEG_LAT = 111_320.0
@@ -170,11 +170,11 @@ def test_recovery_spec_parses_names_and_typed_mappings() -> None:
 @pytest.mark.parametrize("recovery", [PastCPA(), FTR(), ProbabilisticFTR(gamma=0.999)])
 def test_each_recovery_flies_settles_and_reproduces(recovery) -> None:
     pytest.importorskip("bluesky")
-    from cdarr.aircraft import MULTIROTOR
-    from cdarr.config import Config
-    from cdarr.episode import run_episode
-    from cdarr.rng import child, root_seed_sequence
-    from cdarr.scenario import PairwiseEncounter
+    from blueskycdarr.aircraft import MULTIROTOR
+    from blueskycdarr.config import Config
+    from blueskycdarr.episode import run_episode
+    from blueskycdarr.rng import child, root_seed_sequence
+    from blueskycdarr.scenario import PairwiseEncounter
 
     scenario = PairwiseEncounter(pairs=(1, 2), tlos=45.0)
     seq = child(root_seed_sequence(0), 0)

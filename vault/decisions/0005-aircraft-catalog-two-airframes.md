@@ -17,7 +17,7 @@ around 60 m/s would fight a 15 m/s cruise inside the integrator).
 
 ## Decision
 
-One frozen `AircraftModel` per airframe (`cdarr/aircraft.py`): the BlueSky
+One frozen `AircraftModel` per airframe (`blueskycdarr/aircraft.py`): the BlueSky
 carrier type, the resolver speed window `[v_min, v_max]`, and the turn authority. After
 creation the engine *writes the catalog into the fork's per-aircraft arrays* — catalog as
 policy, fork as mechanism — so airframe behaviour is data in this repo, not an edit to

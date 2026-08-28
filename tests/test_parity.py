@@ -13,16 +13,16 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from cdarr.aircraft import FIXEDWING, MULTIROTOR, aircraft_from_spec, as_pair
-from cdarr.config import Config, UncertaintyConfig
-from cdarr.detection import detect
-from cdarr.experiment import (
+from blueskycdarr.aircraft import FIXEDWING, MULTIROTOR, aircraft_from_spec, as_pair
+from blueskycdarr.config import Config, UncertaintyConfig
+from blueskycdarr.detection import detect
+from blueskycdarr.experiment import (
     Condition,
     Models,
     _apply,
     _validate_declared_accuracy_is_read,
 )
-from cdarr.noise import (
+from blueskycdarr.noise import (
     AnisotropicGaussian,
     AnisotropicMixtureGaussian,
     Gaussian,
@@ -30,11 +30,11 @@ from cdarr.noise import (
     MixtureGaussian,
     noise_from_spec,
 )
-from cdarr.recovery import FTR, ProbabilisticFTR, worldview_sigmas
-from cdarr.resolution import MVP, VO, resolve_vo, resolver_from_spec
-from cdarr.rng import generator, root_seed_sequence
-from cdarr.scenario import PairwiseEncounter
-from cdarr.state import StateArrays
+from blueskycdarr.recovery import FTR, ProbabilisticFTR, worldview_sigmas
+from blueskycdarr.resolution import MVP, VO, resolve_vo, resolver_from_spec
+from blueskycdarr.rng import generator, root_seed_sequence
+from blueskycdarr.scenario import PairwiseEncounter
+from blueskycdarr.state import StateArrays
 
 _LAT = 52.0
 _M_PER_DEG_LAT = 111_320.0
@@ -260,8 +260,8 @@ def test_apply_routes_the_new_components_and_fields() -> None:
 
 def test_vo_and_a_mixed_pair_fly_resolve_and_reproduce() -> None:
     pytest.importorskip("bluesky")
-    from cdarr.episode import run_episode
-    from cdarr.rng import child
+    from blueskycdarr.episode import run_episode
+    from blueskycdarr.rng import child
 
     scenario = PairwiseEncounter(pairs=(1, 2), tlos=45.0, speed=(13.0, 16.0))
     seq = child(root_seed_sequence(0), 0)

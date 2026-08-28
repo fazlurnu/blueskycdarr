@@ -27,7 +27,7 @@ from jress_common import (
     save,
 )
 
-from cdarr import MC, Fixed, Sweep, run_experiment
+from blueskycdarr import MC, Fixed, Sweep, run_experiment
 
 PRODUCTION_RUNS = 100
 

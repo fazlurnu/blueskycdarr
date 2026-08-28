@@ -27,7 +27,7 @@ particle operations fixed-level IPS needs (OpenCDaRR's ADR 0017, mirrored here):
   read-only by every particle;
 - :class:`EpisodeState` — everything the loop carries between steps, and nothing else;
   cloning a particle is :meth:`EpisodeState.copy` beside an
-  :class:`~cdarr.engine.WorldSnapshot` of the engine;
+  :class:`~blueskycdarr.engine.WorldSnapshot` of the engine;
 - :class:`EpisodeStreams` — the forward random streams, deliberately *outside* the
   state: clones share their past (the state) and diverge only in their future noise
   (fresh streams per particle per level);
@@ -46,18 +46,18 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from cdarr.adsl import BroadcastChannel, ContactTable, noisy_snapshot
-from cdarr.aircraft import AircraftSpec, as_pair
-from cdarr.config import Config
-from cdarr.detection import detect, pairs_all_clear
-from cdarr.engine import PairwiseWorld
-from cdarr.geo import track_components
-from cdarr.noise import DEFAULT_NOISE, LatencyBiased, NoiseShape
-from cdarr.recovery import DEFAULT_RECOVERY, Recovery, recovered_mask, worldview_sigmas
-from cdarr.resolution import DEFAULT_RESOLVER, Resolver, resolve
-from cdarr.rng import child, generator
-from cdarr.scenario import PairwiseEncounter
-from cdarr.state import StateArrays, counterpart
+from blueskycdarr.adsl import BroadcastChannel, ContactTable, noisy_snapshot
+from blueskycdarr.aircraft import AircraftSpec, as_pair
+from blueskycdarr.config import Config
+from blueskycdarr.detection import detect, pairs_all_clear
+from blueskycdarr.engine import PairwiseWorld
+from blueskycdarr.geo import track_components
+from blueskycdarr.noise import DEFAULT_NOISE, LatencyBiased, NoiseShape
+from blueskycdarr.recovery import DEFAULT_RECOVERY, Recovery, recovered_mask, worldview_sigmas
+from blueskycdarr.resolution import DEFAULT_RESOLVER, Resolver, resolve
+from blueskycdarr.rng import child, generator
+from blueskycdarr.scenario import PairwiseEncounter
+from blueskycdarr.state import StateArrays, counterpart
 
 _EPS = 1e-9
 
@@ -81,7 +81,7 @@ class EpisodeStreams:
     per episode from children 1–4 of the episode sequence (child 0 is geometry, drawn
     once at spawn); a splitting estimator builds a *fresh* bundle per particle per level,
     which is exactly what makes two clones of one survivor diverge (the state/streams
-    split :class:`~cdarr.adsl.BroadcastChannel` documents).
+    split :class:`~blueskycdarr.adsl.BroadcastChannel` documents).
     """
 
     navigation: np.random.Generator
@@ -167,13 +167,13 @@ class EpisodeState:
     steps, and nothing else.
 
     This is the episode half of an IPS particle (the engine half is
-    :class:`~cdarr.engine.WorldSnapshot`), under OpenCDaRR's no-hidden-state invariant:
+    :class:`~blueskycdarr.engine.WorldSnapshot`), under OpenCDaRR's no-hidden-state invariant:
     **everything that influences the future must live here** — a future-affecting value
     kept in a local, a global or a closure would be silently shared between clones, the
     exact corruption that is invisible at rare-event probabilities. The one deliberate
     exception is the engine's command de-duplication cache, which is *reconstructed*
     (not carried) on restore because it equals ``cmd_trk``/``cmd_gs`` at every post-step
-    boundary (:meth:`~cdarr.engine.PairwiseWorld.restore` documents the argument;
+    boundary (:meth:`~blueskycdarr.engine.PairwiseWorld.restore` documents the argument;
     ``tests/test_snapshot_parity.py`` pins it).
 
     ``nominal_trk``/``nominal_gs`` are per-particle *constants* (the spawned geometry's
@@ -347,7 +347,7 @@ def advance(
     ended particle's future is closed, so only its episode half is ever read again.
     A level-crossing stop, by contrast, follows an advance that returned ``True`` (the
     engine stepped, the stack is drained), a valid place to
-    :meth:`~cdarr.engine.PairwiseWorld.snapshot`.
+    :meth:`~blueskycdarr.engine.PairwiseWorld.snapshot`.
     """
     if state.ended:  # a closed episode stays closed — nothing to observe or draw
         return False

@@ -22,7 +22,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from cdarr import (
+from blueskycdarr import (
     MULTIROTOR,
     Config,
     ConflictConfig,
@@ -33,7 +33,7 @@ from cdarr import (
     ProbabilisticFTR,
     SimulationConfig,
 )
-from cdarr.recovery import FTR, Recovery
+from blueskycdarr.recovery import FTR, Recovery
 
 SPEED_20_KTS = 10.2889  # m/s
 PAIRS_PER_RUN = 100

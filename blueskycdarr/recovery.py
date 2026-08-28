@@ -31,10 +31,10 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from cdarr.config import UncertaintyConfig
-from cdarr.detection import Conflicts
-from cdarr.noise import CI95_TO_STD_2D
-from cdarr.state import StateArrays
+from blueskycdarr.config import UncertaintyConfig
+from blueskycdarr.detection import Conflicts
+from blueskycdarr.noise import CI95_TO_STD_2D
+from blueskycdarr.state import StateArrays
 
 try:  # scipy is present transitively (BlueSky depends on it); fall back to math.erf
     from scipy.special import erf as _erf

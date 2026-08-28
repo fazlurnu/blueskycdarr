@@ -30,10 +30,10 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from cdarr.config import CommConfig, UncertaintyConfig
-from cdarr.geo import displace, distance_m, track_from_components
-from cdarr.noise import CI95_TO_STD_2D, DEFAULT_NOISE, NoiseShape
-from cdarr.state import StateArrays, counterpart
+from blueskycdarr.config import CommConfig, UncertaintyConfig
+from blueskycdarr.geo import displace, distance_m, track_from_components
+from blueskycdarr.noise import CI95_TO_STD_2D, DEFAULT_NOISE, NoiseShape
+from blueskycdarr.state import StateArrays, counterpart
 
 _EPS = 1e-9  # time comparison tolerance
 

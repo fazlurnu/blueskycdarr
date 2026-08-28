@@ -20,7 +20,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from cdarr.geo import track_components
+from blueskycdarr.geo import track_components
 
 
 @dataclass

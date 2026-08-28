@@ -1,8 +1,8 @@
 """Engine-backed locks for the IPS particle operations: snapshot, restore, clone, resume.
 
 Fixed-level splitting (OpenCDaRR's ADR 0017, ported here) stands on one invariant: a
-particle — a :class:`~cdarr.engine.WorldSnapshot` beside an
-:class:`~cdarr.episode.EpisodeState` — restored and advanced must reproduce, **bit for
+particle — a :class:`~blueskycdarr.engine.WorldSnapshot` beside an
+:class:`~blueskycdarr.episode.EpisodeState` — restored and advanced must reproduce, **bit for
 bit**, what an uninterrupted run does. Any future-affecting value that escapes the
 particle (a stale global, an uncopied array, a timer counter) diverges these runs — and
 at rare-event probabilities that corruption would be invisible in the estimate, which is
@@ -24,18 +24,18 @@ import pytest
 
 pytest.importorskip("bluesky")
 
-from cdarr.aircraft import MULTIROTOR  # noqa: E402
-from cdarr.config import CommConfig, Config, UncertaintyConfig  # noqa: E402
-from cdarr.engine import PairwiseWorld  # noqa: E402
-from cdarr.episode import (  # noqa: E402
+from blueskycdarr.aircraft import MULTIROTOR  # noqa: E402
+from blueskycdarr.config import CommConfig, Config, UncertaintyConfig  # noqa: E402
+from blueskycdarr.engine import PairwiseWorld  # noqa: E402
+from blueskycdarr.episode import (  # noqa: E402
     EpisodeStreams,
     advance,
     episode_context,
     episode_result,
     init_episode,
 )
-from cdarr.rng import child, generator, root_seed_sequence  # noqa: E402
-from cdarr.scenario import PairwiseEncounter  # noqa: E402
+from blueskycdarr.rng import child, generator, root_seed_sequence  # noqa: E402
+from blueskycdarr.scenario import PairwiseEncounter  # noqa: E402
 
 # Short-horizon encounter, every stream exercised: GNSS noise feeds the CDR views (so
 # clones can diverge), latency keeps messages in flight across snapshots, jitter and
@@ -216,7 +216,7 @@ def test_snapshot_refuses_a_mid_tick_boundary() -> None:
         world.restore(snap)  # consumed again — both directions clean
 
         # the one sanctioned bypass: explicitly discarding a dead world's leftovers
-        from cdarr.engine import discard_pending_commands
+        from blueskycdarr.engine import discard_pending_commands
 
         world.command((world.nominal_trk + 30.0) % 360.0, world.nominal_gs)
         discard_pending_commands()
