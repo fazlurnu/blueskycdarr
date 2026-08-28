@@ -13,3 +13,4 @@ __pycache__/
 # BlueSky writes runtime artefacts next to the process
 output/
 cache/
+.ipynb_checkpoints/
