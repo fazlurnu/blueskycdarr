@@ -1,0 +1,29 @@
+nohup: ignoring input
+MC vs IPS validation at target p ~ 0.0001 — 2026-08-28 10:49:45
+grid {'pos_ci95': [3.0, 10.0, 30.0], 'vel_ci95': [1.0], 'dpsi': [45.0, 90.0, 180.0]} | MC 1000000/cell | IPS N=1000 reps=100 | seed 42
+
+[1/9] dpsi=45.0, pos_ci95=3.0, vel_ci95=1.0: p_los=9.7e-05 (97/1000000)
+[2/9] dpsi=45.0, pos_ci95=10.0, vel_ci95=1.0: p_los=2.6e-05 (26/1000000)
+[3/9] dpsi=45.0, pos_ci95=30.0, vel_ci95=1.0: p_los=3.3e-05 (33/1000000)
+[4/9] dpsi=90.0, pos_ci95=3.0, vel_ci95=1.0: p_los=8.2e-05 (82/1000000)
+[5/9] dpsi=90.0, pos_ci95=10.0, vel_ci95=1.0: p_los=2e-05 (20/1000000)
+[6/9] dpsi=90.0, pos_ci95=30.0, vel_ci95=1.0: p_los=1.8e-05 (18/1000000)
+[7/9] dpsi=180.0, pos_ci95=3.0, vel_ci95=1.0: p_los=0.000181 (181/1000000)
+[8/9] dpsi=180.0, pos_ci95=10.0, vel_ci95=1.0: p_los=4.7e-05 (47/1000000)
+[9/9] dpsi=180.0, pos_ci95=30.0, vel_ci95=1.0: p_los=2.7e-05 (27/1000000)
+MC arm done in 5321s
+
+[1] dpsi=45 pos=3 vel=1: d*=50m MC 9.7e-05 (97) vs IPS 0.000109 -> ratio 1.12 PASS | at rpz: 1.12 [3 collapsed]  (890s, 11 levels)
+[2] dpsi=45 pos=10 vel=1: d*=51.3m MC 9e-05 (90) vs IPS 8.26e-05 -> ratio 0.92 PASS | at rpz: nan [10 collapsed]  (915s, 12 levels)
+[3] dpsi=45 pos=30 vel=1: d*=55.2m MC 9.8e-05 (98) vs IPS 0.000118 -> ratio 1.20 PASS | at rpz: nan [2 collapsed]  (948s, 12 levels)
+[4] dpsi=90 pos=3 vel=1: d*=50.1m MC 9.7e-05 (97) vs IPS 8.17e-05 -> ratio 0.84 PASS | at rpz: nan [77 collapsed]  (881s, 11 levels)
+[5] dpsi=90 pos=10 vel=1: d*=51.9m MC 9.7e-05 (97) vs IPS 9.54e-05 -> ratio 0.98 PASS | at rpz: nan [75 collapsed]  (894s, 12 levels)
+[6] dpsi=90 pos=30 vel=1: d*=56.9m MC 9.6e-05 (96) vs IPS 0.000133 -> ratio 1.39 PASS | at rpz: nan [76 collapsed]  (922s, 12 levels)
+[7] dpsi=180 pos=3 vel=1: d*=49.7m MC 9.9e-05 (99) vs IPS 0.000151 -> ratio 1.52 PASS | at rpz: nan [88 collapsed]  (849s, 11 levels)
+[8] dpsi=180 pos=10 vel=1: d*=50.9m MC 9.4e-05 (94) vs IPS 0.000174 -> ratio 1.85 PASS | at rpz: nan [89 collapsed]  (867s, 12 levels)
+[9] dpsi=180 pos=30 vel=1: d*=56.8m MC 9.9e-05 (99) vs IPS 7.47e-05 -> ratio 0.75 PASS | at rpz: nan [90 collapsed]  (886s, 12 levels)
+
+9 PASS / 0 FAIL / 0 NO_ANCHOR / 0 UNJUDGED of 9 cells | total 13373s
+-> results/validation/mc_vs_ips.csv
+-> results/validation/mc_vs_ips.md
+-> results/validation/mc_vs_ips_detail.jsonl
