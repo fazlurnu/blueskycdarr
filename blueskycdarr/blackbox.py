@@ -1,14 +1,17 @@
 """The MixedVarLSENew adapter — this package as an ``mvlse`` blackbox.
 
 ``mvlse`` asks for a callable over a batch of points and one ``(y, se)`` per point, in
-order, where a point is a mapping in physical units keyed by the design-space names:
+order, where a point is a mapping in physical units. Every key ``run_experiment``
+declares is accepted; the historical MixedVarLSENew spellings are translated:
 
-    p_reception, max_range_m, kinematics, pos_ci95_m, vel_ci95_ms
+    p_reception -> reception_prob      pos_ci95_m -> pos_ci95
+    kinematics  -> aircraft            vel_ci95_ms -> vel_ci95
 
-(the space of ``examples/opencdarr_blackbox.ipynb``). The target is ``log10 P(LoS)``
-with its standard error in decades: a Jeffreys-corrected proportion and the delta method,
-exactly the notebook's Monte-Carlo oracle, so swapping the OpenCDaRR backend for this one
-is a one-import change:
+so both the ``examples/opencdarr_blackbox.ipynb`` space and a space that varies the
+geometry (``dpsi``, ``speed``) or the conflict definition (``rpz``) work unchanged.
+``fixed`` pins declarable values the design space does not vary (e.g. ``rpz``). The
+target is ``log10 P(LoS)`` with its standard error in decades: a Jeffreys-corrected
+proportion and the delta method, exactly the notebook's Monte-Carlo oracle:
 
     from blueskycdarr.blackbox import make_blackbox
     blackbox = make_blackbox(n_encounters=300, seed=7, n_jobs=-1)
@@ -25,7 +28,7 @@ from typing import Any
 
 import numpy as np
 
-from blueskycdarr.aircraft import aircraft_by_label
+from blueskycdarr.aircraft import MULTIROTOR, AircraftSpec
 from blueskycdarr.config import Config
 from blueskycdarr.experiment import MC, Fixed, Models, run_experiment
 from blueskycdarr.noise import DEFAULT_NOISE, NoiseShape
@@ -35,6 +38,14 @@ from blueskycdarr.scenario import PairwiseEncounter
 
 Point = Mapping[str, Any]
 
+# Design-space name -> run_experiment name; anything else passes through verbatim.
+_TO_EXPERIMENT = {
+    "p_reception": "reception_prob",
+    "pos_ci95_m": "pos_ci95",
+    "vel_ci95_ms": "vel_ci95",
+    "kinematics": "aircraft",
+}
+
 
 def make_blackbox(
     *,
@@ -42,33 +53,35 @@ def make_blackbox(
     seed: int = 7,
     base_config: Config | None = None,
     scenario: PairwiseEncounter | None = None,
+    aircraft: AircraftSpec = MULTIROTOR,
     recovery: Recovery = DEFAULT_RECOVERY,
     resolver: Resolver = DEFAULT_RESOLVER,
     noise: NoiseShape = DEFAULT_NOISE,
+    fixed: Mapping[str, Any] | None = None,
     n_jobs: int = 1,
 ) -> Callable[[Sequence[Point]], list[tuple[float, float]]]:
     """A ``points -> [(log10 p_los, se)]`` oracle over this package's simulation.
 
-    ``base_config``, ``scenario`` and ``recovery`` pin everything the design space does
-    not vary (defaults: the package defaults — the MixedVarLSENew geometry of dpsi 90,
-    dcpa 0, past-CPA recovery).
+    ``base_config``, ``scenario``, ``aircraft`` and ``recovery`` pin everything the
+    design space does not vary (defaults: the package defaults — the MixedVarLSENew
+    geometry of dpsi 90, dcpa 0, past-CPA recovery). ``fixed`` pins declarable
+    experiment values instead (e.g. ``{"rpz": 150.0}``); a point key overrides it.
+    ``aircraft`` is the airframe every point flies unless the point carries a
+    ``kinematics`` label of its own.
     """
     config = base_config if base_config is not None else Config()
     encounter = scenario if scenario is not None else PairwiseEncounter()
+    pinned = {key: Fixed(value) for key, value in (fixed or {}).items()}
 
     def blackbox(points: Sequence[Point]) -> list[tuple[float, float]]:
         out = []
         for p in points:
+            axes = dict(pinned)
+            axes.update((_TO_EXPERIMENT.get(k, k), Fixed(v)) for k, v in p.items())
             result = run_experiment(
-                {
-                    "aircraft": Fixed(str(p["kinematics"])),
-                    "pos_ci95": Fixed(float(p["pos_ci95_m"])),
-                    "vel_ci95": Fixed(float(p["vel_ci95_ms"])),
-                    "reception_prob": Fixed(float(p["p_reception"])),
-                    "max_range_m": Fixed(float(p["max_range_m"])),
-                },
+                axes,
                 models=Models(
-                    aircraft=aircraft_by_label(str(p["kinematics"])),
+                    aircraft=aircraft,
                     scenario=encounter,
                     recovery=recovery,
                     resolver=resolver,
