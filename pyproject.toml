@@ -22,8 +22,8 @@ dependencies = [
     "pyyaml>=6",
     "joblib>=1.2",
     # Pinned to a commit, not the branch: the branch can move and results must not
-    # (ADR 0001). This SHA is branch CDaRR as of 2026-08-26.
-    "bluesky-simulator @ git+https://github.com/fazlurnu/bluesky.git@800f47d4af92a3f17adae943a4f9ebf09307c5ca",
+    # (ADR 0001). This SHA is branch CDaRR as of 2026-09-08 (replaceable Kinematics + UAS models).
+    "bluesky-simulator @ git+https://github.com/fazlurnu/bluesky.git@c745a1475616d27f97ecb345d739064816130562",
 ]
 
 [project.optional-dependencies]
