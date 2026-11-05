@@ -107,3 +107,42 @@ flies configured speeds exactly, so the matched condition is deliberately no lon
 bit-identical to CDaRR's: the standing regression now reads FTR 0.0400 (12/300) against
 CDaRR's 0.0211, past-CPA and probabilistic FTR unchanged at 0/300. FTR's chatter is the
 one model sensitive to the 0.5% speed difference; the conclusion and the ordering stand.
+
+## Update — 2026-11-04: FTR judges the desired velocity, not the standing command
+
+**Superseded:** the "Release decisions lag the command by one tick" decision. The ordering
+(recovery before resolution) stays; what the criteria evaluate changes.
+
+**What was wrong.** Both FTR criteria were evaluated on the ownship's *standing resolution
+command* (the MVP velocity stacked at the previous tick). That velocity is built to miss
+by `margin * rpz`, so it clears by construction: FTR released one tick after every
+resolution, the aircraft returned to nominal, the conflict was re-detected, and MVP
+re-engaged — resolve/release chatter on every CDR tick until CPA (300 speed changes in a
+single 20 kt, 90 deg, perfect-CNS encounter). This was a faithful port: CDaRR's
+`envs/pairwise_conflict.py` stacks `reso_hdg` / `reso_spd` as HDG/SPD autopilot
+commands, so `get_desired_ownship_velocity` (reading `ap.trk` / `ap.tas`) also returned
+the resolution there. It was not faithful to the method: the JRESS paper
+(`02Background.tex`, after Schaberg 2020) defines both criteria on the ownship
+**desired** velocity `V_o,d` — "free to revert" asks whether *returning* is
+conflict-free.
+
+**Decision.** `recovered_mask` takes `desired_v` — the episode passes the nominal
+(pre-resolution) velocity. Applies to FTR and ProbabilisticFTR (same input). Locked by
+`tests/test_recovery_no_chatter.py` (one resolution per encounter, perfect CNS).
+
+**Measured** (MixedVarLSENew `paper_trc/sanity_checks/04_jress_exp1_rerun.ipynb`: the
+JRESS Exp. 1 grid at 9 crossing angles x 4 uncertainty levels, 10,000 encounters per
+cell, common random numbers; angle-averaged IPR):
+
+| pos / vel CI95 | FTR before | FTR after | ProbFTR before | ProbFTR after |
+|---|---|---|---|---|
+| 3 m / 1 m/s | 0.895 | 0.9999 | 0.9998 | 1.0000 |
+| 3 m / 3 m/s | 0.716 | 0.9955 | 0.9947 | 0.9995 |
+| 10 m / 1 m/s | 0.942 | 1.0000 | 0.9999 | 1.0000 |
+| 10 m / 3 m/s | 0.788 | 0.9959 | 0.9969 | 0.9997 |
+
+The published FTR deficit was almost entirely the chatter. ProbFTR stays at least as safe
+as FTR in every cell; its advantage concentrates at shallow crossings (2–10 deg) under
+3 m/s velocity noise (2 deg, 10 m / 3 m/s: FTR 0.930 vs ProbFTR 0.997). The
+matched-CDaRR row of `scripts/correctness_figures.py` no longer reproduces CDaRR's FTR
+number (0/3000 here vs 0.0211 there) — by design, since CDaRR carries the chatter.

@@ -275,20 +275,20 @@ def _cdr_tick(
     state.initial_other_vn[newly] = other_view.gs_north[newly]
     state.resolving |= conflicts.in_conflict
 
-    # Recovery FIRST, on the commands currently being flown (last tick's).
-    # This one-tick lag is CDaRR's, by construction there (its FTR criteria
-    # read ap.trk, the previously *stacked* command), and it is load-bearing:
-    # a fresh resolution command is always flown for one CDR period before
-    # the release criteria may judge it. Deciding on the same tick's fresh
-    # command lets FTR release avoidance courses that were never flown —
-    # measured against CDaRR itself: P(LoS) 0.99 instead of 0.03 (ADR 0006).
+    # Recovery FIRST, judging the course the aircraft would RETURN to: its nominal.
+    # CDaRR's criteria read ap.trk / ap.tas, which BlueSky's resolver never writes
+    # (the resolution lives in cr.trk), so they test the pre-resolution course.
+    # Judging the standing resolution command instead releases every avoidance
+    # course one tick after it is issued (it clears by construction) and the
+    # aircraft chatters between resolution and nominal every CDR tick (ADR 0006
+    # update, 2026-11-04).
     recovered = recovered_mask(
         ctx.recovery,
         resolving=state.resolving,
         conflicts=conflicts,
         own=own_view,
         other=other_view,
-        commanded_v=track_components(state.cmd_trk, state.cmd_gs),
+        desired_v=track_components(state.nominal_trk, state.nominal_gs),
         initial_other_v=(state.initial_other_ve, state.initial_other_vn),
         rpz=rpz,
         margin=margin,

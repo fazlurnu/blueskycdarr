@@ -269,6 +269,59 @@ def reset_world() -> None:
     discard_pending_commands()
 
 
+def flown_spawn(
+    own_lat: float,
+    own_lon: float,
+    *,
+    gs_own: float,
+    gs_intr: float,
+    dpsi: float,
+    dcpa: float,
+    tlos: float,
+    rpz: float,
+    dt: float,
+) -> tuple[float, float]:
+    """Intruder spawn (lat, lon) whose *flown* track passes the ownship at miss ``dcpa``.
+
+    ``creconfs`` aims along straight lines on a flat plane, but an aircraft holding a
+    constant heading on BlueSky's sphere flies a rhumb line, which bows away from them:
+    over a 10-25 km spawn the flown miss departs from ``dcpa`` by tens of metres. Here
+    the CPA comes first: after ``N = round(t_cpa / dt)`` steps the ownship (track 000)
+    is at a known point on its meridian, the intruder must be ``dcpa`` from it across
+    the relative velocity, and the intruder is flown back ``N`` steps by inverting
+    BlueSky's own position step (``Kinematics.update_pos``: latitude first, then
+    longitude with the *updated* ``cos(lat)``). Flying forward retraces it to float
+    precision, so CPA falls on a sampled step with miss ``dcpa``.
+
+    ``t_cpa = tlos + sqrt(rpz^2 - dcpa^2) / v_rel`` keeps ``tlos`` the time to LoS (to
+    within ``dt / 2``, from rounding ``N``). Assumes no wind and constant track and speed
+    until the CDR acts, as the spawn does.
+    """
+    from bluesky.tools.aero import Rearth
+
+    trk = np.radians(dpsi)
+    ve, vn = gs_intr * np.sin(trk), gs_intr * np.cos(trk)
+    du, dv = ve, vn - gs_own  # intruder relative to the ownship (east, north)
+    v_rel = float(np.hypot(du, dv))
+    if v_rel < 1e-6:
+        raise ValueError(f"no closure at dpsi={dpsi} with equal speeds: there is no CPA to aim at")
+    t_cpa = tlos + np.sqrt(max(rpz * rpz - dcpa * dcpa, 0.0)) / v_rel
+    n = int(round(t_cpa / dt))
+
+    # The ownship at step n, and the intruder dcpa from it across the relative velocity.
+    lat_own = own_lat + n * np.degrees(dt * gs_own / Rearth)
+    off_e, off_n = dcpa * dv / v_rel, -dcpa * du / v_rel
+    lat_cpa = lat_own + np.degrees(off_n / Rearth)
+    lon_cpa = own_lon + np.degrees(off_e / (Rearth * np.cos(np.radians(lat_own))))
+
+    # Back n steps: lat_k = lat_cpa - (n - k) dlat; each step's longitude increment used
+    # the latitude it arrived at, lat_1 .. lat_n.
+    dlat = np.degrees(dt * vn / Rearth)
+    lat_k = lat_cpa - np.arange(n - 1, -1, -1) * dlat
+    lon0 = lon_cpa - np.sum(np.degrees(dt * ve / (np.cos(np.radians(lat_k)) * Rearth)))
+    return float(lat_cpa - n * dlat), float(lon0)
+
+
 @dataclass
 class PairwiseWorld:
     """One spawned batch of conflict pairs inside the process-global BlueSky.
@@ -315,15 +368,36 @@ class PairwiseWorld:
                 acalt=_ALT_M,
                 acspd=self._to_cas(float(self.geometry.gs_own[k])),
             )
-            bs.traf.creconfs(
-                acid=intr_id,
-                actype=intr_model.bs_actype,
-                targetidx=bs.traf.id2idx(own_id),
-                dpsi=float(self.geometry.dpsi[k]),
-                dcpa=float(self.geometry.dcpa[k]) * M_TO_NM,
-                tlosh=float(self.scenario.tlos),
-                spd=self._to_cas(float(self.geometry.gs_intr[k])),
-            )
+            if self.scenario.aim == "flown":
+                intr_lat, intr_lon = flown_spawn(
+                    lat, lon,
+                    gs_own=float(self.geometry.gs_own[k]),
+                    gs_intr=float(self.geometry.gs_intr[k]),
+                    dpsi=float(self.geometry.dpsi[k]),
+                    dcpa=float(self.geometry.dcpa[k]),
+                    tlos=float(self.scenario.tlos),
+                    rpz=self.conflict.rpz,
+                    dt=self.simulation.dt,
+                )
+                bs.traf.cre(
+                    acid=intr_id,
+                    actype=intr_model.bs_actype,
+                    aclat=intr_lat,
+                    aclon=intr_lon,
+                    achdg=float(self.geometry.dpsi[k]) % 360.0,
+                    acalt=_ALT_M,
+                    acspd=self._to_cas(float(self.geometry.gs_intr[k])),
+                )
+            else:
+                bs.traf.creconfs(
+                    acid=intr_id,
+                    actype=intr_model.bs_actype,
+                    targetidx=bs.traf.id2idx(own_id),
+                    dpsi=float(self.geometry.dpsi[k]),
+                    dcpa=float(self.geometry.dcpa[k]) * M_TO_NM,
+                    tlosh=float(self.scenario.tlos),
+                    spd=self._to_cas(float(self.geometry.gs_intr[k])),
+                )
             self.nominal_trk[2 * k] = 0.0
             self.nominal_trk[2 * k + 1] = self.geometry.dpsi[k] % 360.0
             self.nominal_gs[2 * k] = self.geometry.gs_own[k]

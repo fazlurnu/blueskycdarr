@@ -51,6 +51,13 @@ class PairwiseEncounter:
         spawned straight into a detectable conflict (the MixedVarLSENew setup).
     pairs:
         The spawn grid as (rows, cols); rows x cols pairs per episode.
+    aim:
+        How the intruder is placed. ``"creconfs"`` (the default, CDaRR's) is BlueSky's
+        flat-plane placement: constant-heading flight on BlueSky's sphere bows away from
+        its straight lines, so a long spawn misses by more than ``dcpa`` (tens of metres
+        for 60 kt crossings at 52 N). ``"flown"`` places the CPA first and flies the
+        intruder back to spawn through BlueSky's own position step, so the *flown* miss
+        distance is ``dcpa`` (``engine.flown_spawn``).
     """
 
     speed: float | tuple[float, float] = 15.0
@@ -60,6 +67,7 @@ class PairwiseEncounter:
     dcpa_max: float = 50.0
     tlos: float = 90.0
     pairs: tuple[int, int] = (10, 10)
+    aim: str = "creconfs"
 
     def __post_init__(self) -> None:
         problems = []
@@ -74,6 +82,8 @@ class PairwiseEncounter:
             problems.append("tlos > 0")
         if len(self.pairs) != 2 or min(self.pairs) < 1:
             problems.append("pairs = (rows >= 1, cols >= 1)")
+        if self.aim not in ("creconfs", "flown"):
+            problems.append("aim in ('creconfs', 'flown')")
         if problems:
             raise ValueError(f"scenario constraints violated: {'; '.join(problems)}")
 

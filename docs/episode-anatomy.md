@@ -72,11 +72,11 @@ sequenceDiagram
 Two orderings in that tick are load-bearing, both inherited from CDaRR and locked by
 tests:
 
-- **Recovery decides before resolution, on the *previous* tick's commands.** A fresh
-  avoidance command is therefore always flown for one CDR period before the release
-  criteria may judge it. Deciding on the same tick's fresh command lets FTR release
-  courses that were never flown — measured against CDaRR itself: P(LoS) 0.99 instead
-  of 0.03 (ADR 0006).
+- **Recovery decides before resolution, and judges the course the aircraft would return
+  to** — its nominal velocity, as the FTR criteria are defined. Judging the standing
+  resolution command instead (the port until 2026-11-04, and CDaRR's implementation)
+  releases every avoidance course one tick after issue and makes the aircraft chatter
+  between resolution and nominal (ADR 0006 update).
 - **Termination never steps past the end.** On settle or the `t_max` cap the world
   stays at its last post-step boundary and `state.ended` latches. An ending that lands
   exactly on a command-stacking tick leaves dead commands pending — the one boundary

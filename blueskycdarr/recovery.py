@@ -5,8 +5,8 @@ Three models, all CDaRR's, selectable as a component on the models bundle:
 - :class:`PastCPA` (``crr_resumenav_cpa.py``) — geometric: past closest approach, not in
   loss of separation, and (optionally) not in a *bouncing* near-parallel geometry.
 - :class:`FTR` (``crr_resumenav_ftr.py``) — the double criteria: release only when the
-  aircraft's **commanded course** clears the protected zone against both intruder
-  hypotheses — the intruder keeps its current velocity (criterion 1), or reverts to the
+  aircraft's **return course** (its nominal velocity) clears the protected zone against
+  both intruder hypotheses — the intruder keeps its current velocity (criterion 1), or reverts to the
   velocity it had when the conflict started (criterion 2). Both use the *unconstrained*
   line-CPA miss distance, so an already-resolved geometry (passing behind) releases
   early — FTR's point — while a resolved *pass* keeps its cleared miss distance.
@@ -20,7 +20,7 @@ Three models, all CDaRR's, selectable as a component on the models bundle:
   produces (``sigma^2 I``).
 
 Every model reads the perceived geometry from the detection pass; the FTR family also
-reads the current *commanded* velocity (what the aircraft is flying toward) and the
+reads the *desired* velocity (the nominal the aircraft would return to) and the
 recorded conflict-start velocity of the counterpart, which the episode maintains.
 """
 
@@ -58,7 +58,7 @@ class PastCPA:
 
 @dataclass(frozen=True)
 class FTR:
-    """Free to return: the commanded course clears both intruder hypotheses."""
+    """Free to return: the return (nominal) course clears both intruder hypotheses."""
 
 
 @dataclass(frozen=True)
@@ -150,7 +150,7 @@ def recovered_mask(
     conflicts: Conflicts,
     own: StateArrays,
     other: StateArrays,
-    commanded_v: tuple[np.ndarray, np.ndarray],
+    desired_v: tuple[np.ndarray, np.ndarray],
     initial_other_v: tuple[np.ndarray, np.ndarray],
     rpz: float,
     margin: float,
@@ -159,13 +159,12 @@ def recovered_mask(
 ) -> np.ndarray:
     """Boolean mask of aircraft that may resume navigation this tick.
 
-    ``commanded_v`` is the (east, north) velocity the aircraft is *currently flying
-    toward* — the command applied at the previous CDR tick, never the one about to be
-    issued. The caller owns that ordering, and it is load-bearing: CDaRR's criteria read
-    ``ap.trk`` (the previously stacked command), which guarantees a fresh resolution is
-    flown for one CDR period before release may judge it; evaluating the same tick's
-    fresh command instead lets FTR discard avoidance courses that were never flown
-    (measured: P(LoS) 0.99 vs CDaRR's 0.03 on the identical condition — ADR 0006).
+    ``desired_v`` is the (east, north) velocity the aircraft would *return to* — its
+    nominal, pre-resolution velocity. CDaRR's ``get_desired_ownship_velocity`` reads
+    ``ap.trk`` / ``ap.tas``, which BlueSky's resolver never writes, so "free to return"
+    tests the return course. Feeding the standing resolution command instead releases
+    every avoidance course one tick after it is issued, because it clears by
+    construction, and the aircraft chatters (ADR 0006 update, 2026-11-04).
 
     ``initial_other_v`` is the counterpart velocity recorded when its conflict started
     (NaN where unrecorded — the FTR family falls back to the current velocity, exactly
@@ -182,7 +181,7 @@ def recovered_mask(
     if idx.size == 0:
         return mask
 
-    du1, dv1, du2, dv2 = _hypothesis_velocities(idx, commanded_v, other, initial_other_v)
+    du1, dv1, du2, dv2 = _hypothesis_velocities(idx, desired_v, other, initial_other_v)
     dx = conflicts.dx[idx]
     dy = conflicts.dy[idx]
 
@@ -233,12 +232,12 @@ def past_cpa_recovered(
 
 def _hypothesis_velocities(
     idx: np.ndarray,
-    commanded_v: tuple[np.ndarray, np.ndarray],
+    desired_v: tuple[np.ndarray, np.ndarray],
     other: StateArrays,
     initial_other_v: tuple[np.ndarray, np.ndarray],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Relative velocities (self minus other) for the two intruder hypotheses."""
-    cmd_e, cmd_n = commanded_v[0][idx], commanded_v[1][idx]
+    cmd_e, cmd_n = desired_v[0][idx], desired_v[1][idx]
     cur_e, cur_n = other.gs_east[idx], other.gs_north[idx]
     init_e = np.where(np.isnan(initial_other_v[0][idx]), cur_e, initial_other_v[0][idx])
     init_n = np.where(np.isnan(initial_other_v[1][idx]), cur_n, initial_other_v[1][idx])

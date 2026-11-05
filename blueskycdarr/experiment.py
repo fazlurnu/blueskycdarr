@@ -117,7 +117,9 @@ _COMM_FIELDS = frozenset(
 )
 _CONFLICT_FIELDS = frozenset({"rpz", "t_lookahead", "resolution_margin"})
 _SIMULATION_FIELDS = frozenset({"dt", "cdr_dt", "t_max", "done_timeout"})
-_GEOMETRY_SLOTS = frozenset({"speed", "gs_intr", "dpsi", "dcpa", "dcpa_max", "tlos", "pairs"})
+_GEOMETRY_SLOTS = frozenset(
+    {"speed", "gs_intr", "dpsi", "dcpa", "dcpa_max", "tlos", "pairs", "aim"}
+)
 _COMPONENTS = frozenset({"aircraft", "recovery", "resolver", "noise"})
 _KNOWN_KEYS = (
     _UNCERTAINTY_FIELDS
